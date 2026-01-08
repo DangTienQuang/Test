@@ -13,6 +13,8 @@ namespace DataLabeling.DAL
         public DbSet<Project> Projects { get; set; }
         public DbSet<DataItem> DataItems { get; set; }
         public DbSet<LabelTask> LabelTasks { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<SystemConfig> SystemConfigs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

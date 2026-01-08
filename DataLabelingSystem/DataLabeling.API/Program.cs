@@ -16,6 +16,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserService, UserService>();      
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<ISystemConfigService, SystemConfigService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
