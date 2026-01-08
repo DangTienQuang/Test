@@ -13,10 +13,12 @@ namespace DataLabeling.BLL.Services
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IActivityLogService _logService;
 
-        public UserService(IUnitOfWork unitOfWork)
+        public UserService(IUnitOfWork unitOfWork, IActivityLogService logService)
         {
             _unitOfWork = unitOfWork;
+            _logService = logService;
         }
         public async Task<IEnumerable<UserDto>> GetUsersByRoleAsync(DataLabeling.Core.Enums.UserRole role)
         {
@@ -88,6 +90,8 @@ namespace DataLabeling.BLL.Services
             await _unitOfWork.Repository<User>().AddAsync(newUser);
             await _unitOfWork.CompleteAsync();
 
+            await _logService.LogAsync(newUser.Id, "Register", "User", newUser.Id.ToString(), $"Registered user {newUser.Username}");
+
             return new UserDto
             {
                 Id = newUser.Id,
@@ -135,6 +139,8 @@ namespace DataLabeling.BLL.Services
             _unitOfWork.Repository<User>().Update(user);
             await _unitOfWork.CompleteAsync();
 
+            await _logService.LogAsync(user.Id, "Update", "User", user.Id.ToString(), "Updated profile");
+
             return new UserDto
             {
                 Id = user.Id,
@@ -152,6 +158,8 @@ namespace DataLabeling.BLL.Services
             _unitOfWork.Repository<User>().Remove(user);
 
             await _unitOfWork.CompleteAsync();
+
+            await _logService.LogAsync(null, "Delete", "User", id.ToString(), $"Deleted user {user.Username}");
         }
     }
 }

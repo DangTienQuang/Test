@@ -14,13 +14,14 @@ namespace DataLabeling.BLL.Services
     public class ProjectService : IProjectService
     {
         private readonly IUnitOfWork _unitOfWork;
-
         private readonly AppDbContext _context;
+        private readonly IActivityLogService _logService;
 
-        public ProjectService(IUnitOfWork unitOfWork, AppDbContext context)
+        public ProjectService(IUnitOfWork unitOfWork, AppDbContext context, IActivityLogService logService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
+            _logService = logService;
         }
 
         public async Task<ProjectViewDto> CreateProjectAsync(CreateProjectDto dto)
@@ -40,6 +41,8 @@ namespace DataLabeling.BLL.Services
 
             await _unitOfWork.Repository<Project>().AddAsync(project);
             await _unitOfWork.CompleteAsync();
+
+            await _logService.LogAsync(dto.ManagerId, "Create", "Project", project.Id.ToString(), $"Created project {project.Name}");
 
             return new ProjectViewDto
             {

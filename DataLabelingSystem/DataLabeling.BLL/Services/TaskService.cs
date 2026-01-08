@@ -12,10 +12,12 @@ namespace DataLabeling.BLL.Services
     public class TaskService : ITaskService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IActivityLogService _logService;
 
-        public TaskService(IUnitOfWork unitOfWork)
+        public TaskService(IUnitOfWork unitOfWork, IActivityLogService logService)
         {
             _unitOfWork = unitOfWork;
+            _logService = logService;
         }
 
         public async Task AssignTasksAsync(AssignTaskDto dto)
@@ -137,6 +139,9 @@ namespace DataLabeling.BLL.Services
             task.LastUpdated = DateTime.Now;
             _unitOfWork.Repository<LabelTask>().Update(task);
             await _unitOfWork.CompleteAsync();
+
+            string action = dto.IsApproved ? "Approve" : "Reject";
+            await _logService.LogAsync(null, action, "Task", task.Id.ToString(), $"Reviewed task {task.Id}");
         }
     }
 }
