@@ -2,7 +2,6 @@
 using DataLabeling.Core.Entities;
 using DataLabeling.Core.Enums;
 using DataLabeling.Core.Interfaces;
-using DataLabeling.DAL;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -14,13 +13,12 @@ namespace DataLabeling.BLL.Services
     public class ProjectService : IProjectService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly AppDbContext _context;
+
         private readonly IActivityLogService _logService;
 
-        public ProjectService(IUnitOfWork unitOfWork, AppDbContext context, IActivityLogService logService)
+        public ProjectService(IUnitOfWork unitOfWork, IActivityLogService logService)
         {
             _unitOfWork = unitOfWork;
-            _context = context;
             _logService = logService;
         }
 
@@ -53,16 +51,16 @@ namespace DataLabeling.BLL.Services
                 TotalImages = 0
             };
         }
+
         public async Task<int> AddDataItemsAsync(AddDataItemDto dto)
         {
             var project = await _unitOfWork.Repository<Project>().GetByIdAsync(dto.ProjectId);
             if (project == null) throw new Exception("Dự án không tồn tại.");
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 var dataItems = new List<DataItem>();
-                var tasks = new List<LabelTask>();
 
                 foreach (var url in dto.ImageUrls)
                 {
@@ -73,38 +71,39 @@ namespace DataLabeling.BLL.Services
                         ProjectId = dto.ProjectId
                     };
                     dataItems.Add(item);
-                }
 
-                await _context.DataItems.AddRangeAsync(dataItems);
-                await _context.SaveChangesAsync();
+                    await _unitOfWork.Repository<DataItem>().AddAsync(item);
+                }
+                await _unitOfWork.CompleteAsync();
 
                 foreach (var item in dataItems)
                 {
-                    tasks.Add(new LabelTask
+                    var task = new LabelTask
                     {
                         DataItemId = item.Id,
                         Status = ProjectTaskStatus.New,
                         AnnotatorId = null,
                         LabelData = null
-                    });
+                    };
+                    await _unitOfWork.Repository<LabelTask>().AddAsync(task);
                 }
-
-                await _context.LabelTasks.AddRangeAsync(tasks);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
+                await _unitOfWork.CommitTransactionAsync();
 
                 return dataItems.Count;
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackTransactionAsync();
                 throw;
             }
         }
+
         public async Task<IEnumerable<ProjectViewDto>> GetProjectsByManagerAsync(int managerId)
         {
-            return await _context.Projects
+            return await _unitOfWork.Repository<Project>()
+                .AsQueryable()
+                .Include(p => p.Manager)
+                .Include(p => p.DataItems)
                 .Where(p => p.ManagerId == managerId)
                 .Select(p => new ProjectViewDto
                 {
@@ -119,10 +118,10 @@ namespace DataLabeling.BLL.Services
 
         public async Task<ProjectProgressDto> GetProjectProgressAsync(int projectId)
         {
-            var projectExists = await _context.Projects.AnyAsync(p => p.Id == projectId);
-            if (!projectExists) throw new Exception("Dự án không tồn tại.");
-
-            var dataItems = await _context.DataItems
+            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(projectId);
+            if (project == null) throw new Exception("Dự án không tồn tại.");
+            var dataItems = await _unitOfWork.Repository<DataItem>()
+                                          .AsQueryable()
                                           .Include(d => d.LabelTask)
                                           .Where(d => d.ProjectId == projectId)
                                           .ToListAsync();
@@ -148,22 +147,23 @@ namespace DataLabeling.BLL.Services
 
         public async Task<IEnumerable<ExportDataItemDto>> ExportApprovedDataAsync(int projectId)
         {
-            var query = from d in _context.DataItems
-                        join t in _context.LabelTasks on d.Id equals t.DataItemId
-                        join u in _context.Users on t.AnnotatorId equals u.Id into users
-                        from annotator in users.DefaultIfEmpty()
-                        where d.ProjectId == projectId && t.Status == ProjectTaskStatus.Approved
-                        select new ExportDataItemDto
-                        {
-                            Id = d.Id,
-                            FileName = d.FileName,
-                            Url = d.DataUrl,
-                            LabelData = t.LabelData,
-                            AnnotatorName = annotator != null ? annotator.FullName : "Unknown",
-                            ReviewerComment = t.ReviewerComment
-                        };
+            var query = _unitOfWork.Repository<DataItem>()
+                        .AsQueryable()
+                        .Include(d => d.LabelTask)
+                            .ThenInclude(t => t.Annotator)
+                        .Where(d => d.ProjectId == projectId && d.LabelTask.Status == ProjectTaskStatus.Approved);
 
-            return await query.ToListAsync();
+            var result = await query.Select(d => new ExportDataItemDto
+            {
+                Id = d.Id,
+                FileName = d.FileName,
+                Url = d.DataUrl,
+                LabelData = d.LabelTask.LabelData,
+                AnnotatorName = d.LabelTask.Annotator != null ? d.LabelTask.Annotator.FullName : "Unknown",
+                ReviewerComment = d.LabelTask.ReviewerComment
+            }).ToListAsync();
+
+            return result;
         }
     }
 }

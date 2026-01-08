@@ -1,4 +1,6 @@
 ﻿using DataLabeling.Core.Interfaces;
+using DataLabeling.DAL;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ namespace DataLabeling.DAL.Repositories
     {
         private readonly AppDbContext _context;
         private Hashtable _repositories;
+        private IDbContextTransaction _currentTransaction;
 
         public UnitOfWork(AppDbContext context)
         {
@@ -40,6 +43,40 @@ namespace DataLabeling.DAL.Repositories
             }
 
             return (IGenericRepository<T>)_repositories[type];
+        }
+        public async Task BeginTransactionAsync()
+        {
+            if (_currentTransaction != null) return;
+            _currentTransaction = await _context.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            try
+            {
+                await _context.SaveChangesAsync();
+                if (_currentTransaction != null)
+                {
+                    await _currentTransaction.CommitAsync();
+                    await _currentTransaction.DisposeAsync();
+                    _currentTransaction = null;
+                }
+            }
+            catch
+            {
+                await RollbackTransactionAsync();
+                throw;
+            }
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            if (_currentTransaction != null)
+            {
+                await _currentTransaction.RollbackAsync();
+                await _currentTransaction.DisposeAsync();
+                _currentTransaction = null;
+            }
         }
     }
 }

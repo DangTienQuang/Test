@@ -1,4 +1,5 @@
 ﻿using DataLabeling.Core.Interfaces;
+using DataLabeling.DAL;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,11 @@ namespace DataLabeling.DAL.Repositories
         public void Update(T entity)
         {
             _dbSet.Update(entity);
+        }
+
+        public IQueryable<T> AsQueryable()
+        {
+            return _dbSet.AsQueryable();
         }
     }
 }
