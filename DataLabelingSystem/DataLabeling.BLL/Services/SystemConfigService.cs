@@ -1,9 +1,7 @@
 using DataLabeling.Core.DTOs;
 using DataLabeling.Core.Entities;
 using DataLabeling.Core.Interfaces;
-using DataLabeling.DAL;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,16 +10,17 @@ namespace DataLabeling.BLL.Services
 {
     public class SystemConfigService : ISystemConfigService
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public SystemConfigService(AppDbContext context)
+        public SystemConfigService(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IEnumerable<SystemConfigDto>> GetAllConfigsAsync()
         {
-            return await _context.Set<SystemConfig>()
+            return await _unitOfWork.Repository<SystemConfig>()
+                .AsQueryable()
                 .Select(c => new SystemConfigDto
                 {
                     Id = c.Id,
@@ -34,7 +33,9 @@ namespace DataLabeling.BLL.Services
 
         public async Task<SystemConfigDto> GetConfigByKeyAsync(string key)
         {
-            var config = await _context.Set<SystemConfig>().FirstOrDefaultAsync(c => c.Key == key);
+            var configs = await _unitOfWork.Repository<SystemConfig>().FindAsync(c => c.Key == key);
+            var config = configs.FirstOrDefault();
+
             if (config == null) return null;
 
             return new SystemConfigDto
@@ -48,26 +49,26 @@ namespace DataLabeling.BLL.Services
 
         public async Task<SystemConfigDto> UpdateConfigAsync(UpdateSystemConfigDto dto)
         {
-            var config = await _context.Set<SystemConfig>().FirstOrDefaultAsync(c => c.Key == dto.Key);
+            var configs = await _unitOfWork.Repository<SystemConfig>().FindAsync(c => c.Key == dto.Key);
+            var config = configs.FirstOrDefault();
 
             if (config == null)
             {
-                // Create if not exists (optional behavior, but useful for initial setup)
                 config = new SystemConfig
                 {
                     Key = dto.Key,
                     Value = dto.Value,
                     Description = "Auto-created"
                 };
-                await _context.Set<SystemConfig>().AddAsync(config);
+                await _unitOfWork.Repository<SystemConfig>().AddAsync(config);
             }
             else
             {
                 config.Value = dto.Value;
-                _context.Set<SystemConfig>().Update(config);
+                _unitOfWork.Repository<SystemConfig>().Update(config);
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CompleteAsync();
 
             return new SystemConfigDto
             {
