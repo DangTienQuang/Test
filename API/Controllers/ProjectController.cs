@@ -155,5 +155,22 @@ namespace API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+        [HttpGet("{id}/export")]
+        public async Task<IActionResult> ExportProject(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            try
+            {
+                var fileContent = await _projectService.ExportProjectDataAsync(id, userId);
+                return File(fileContent, "application/json", $"project-{id}-export.json");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
     }
 }
