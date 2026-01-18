@@ -1,0 +1,12 @@
+﻿using DTOs.Entities;
+
+namespace DAL.Interfaces
+{
+    public interface IProjectRepository : IRepository<Project>
+    {
+        Task<Project?> GetProjectWithDetailsAsync(int id);
+        Task<List<Project>> GetProjectsByManagerIdAsync(string managerId);
+
+        Task<List<Project>> GetProjectsByAnnotatorAsync(string annotatorId);
+    }
+}
