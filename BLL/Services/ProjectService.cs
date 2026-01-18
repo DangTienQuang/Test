@@ -196,5 +196,60 @@ namespace BLL.Services
             var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
             return Encoding.UTF8.GetBytes(json);
         }
+
+        public async Task<ProjectStatisticsResponse> GetProjectStatisticsAsync(int projectId)
+        {
+            var project = await _projectRepository.GetProjectWithStatsDataAsync(projectId);
+            if (project == null) throw new Exception("Project not found");
+
+            var allAssignments = project.DataItems.SelectMany(d => d.Assignments).ToList();
+
+            var stats = new ProjectStatisticsResponse
+            {
+                ProjectId = project.Id,
+                TotalItems = project.DataItems.Count,
+                CompletedItems = project.DataItems.Count(d => d.Status == "Done"),
+
+                TotalAssignments = allAssignments.Count,
+                PendingAssignments = allAssignments.Count(a => a.Status == "Assigned" || a.Status == "InProgress"),
+                SubmittedAssignments = allAssignments.Count(a => a.Status == "Submitted"),
+                ApprovedAssignments = allAssignments.Count(a => a.Status == "Completed"),
+                RejectedAssignments = allAssignments.Count(a => a.Status == "Rejected")
+            };
+
+            if (stats.TotalItems > 0)
+            {
+                stats.ProgressPercentage = Math.Round((decimal)stats.CompletedItems / stats.TotalItems * 100, 2);
+            }
+
+            // Annotator Performance
+            stats.AnnotatorPerformances = allAssignments
+                .GroupBy(a => a.AnnotatorId)
+                .Select(g => new AnnotatorPerformance
+                {
+                    AnnotatorId = g.Key,
+                    AnnotatorName = g.FirstOrDefault()?.Annotator.FullName ?? "Unknown",
+                    TasksAssigned = g.Count(),
+                    TasksCompleted = g.Count(a => a.Status == "Completed"),
+                    TasksRejected = g.Count(a => a.Status == "Rejected"),
+                    AverageDurationSeconds = g.Where(a => a.DurationSeconds > 0).Any()
+                        ? Math.Round(g.Where(a => a.DurationSeconds > 0).Average(a => a.DurationSeconds), 2)
+                        : 0
+                }).ToList();
+
+            // Label Distribution
+            var allAnnotations = allAssignments.SelectMany(a => a.Annotations).ToList();
+            var labelCounts = allAnnotations
+                .GroupBy(an => an.ClassId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            stats.LabelDistributions = project.LabelClasses.Select(lc => new LabelDistribution
+            {
+                ClassName = lc.Name,
+                Count = labelCounts.ContainsKey(lc.Id) ? labelCounts[lc.Id] : 0
+            }).ToList();
+
+            return stats;
+        }
     }
 }

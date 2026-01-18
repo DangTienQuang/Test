@@ -172,5 +172,19 @@ namespace API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+        [HttpGet("{id}/stats")]
+        public async Task<IActionResult> GetProjectStats(int id)
+        {
+            try
+            {
+                var stats = await _projectService.GetProjectStatisticsAsync(id);
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
     }
 }
