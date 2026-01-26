@@ -1,37 +1,57 @@
-﻿using API;
+﻿using API.Middlewares;
 using BLL.Interfaces;
 using BLL.Services;
 using DAL;
 using DAL.Interfaces;
 using DAL.Repositories;
+using DTOs.Constants;
 using DTOs.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
 using System.Text;
+using API;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+// ==================================================================
+// 1. CẤU HÌNH SERVICES (DEPENDENCY INJECTION)
+// ==================================================================
 
+// --- A. Database Context ---
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// --- B. Đăng ký Repositories ---
+// Đăng ký Repository Generic trước
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
+// Đăng ký các Repository cụ thể
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<ILabelRepository, LabelRepository>();
+
+// --- C. Đăng ký Services (Business Logic) ---
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<ILabelService, LabelService>();
+
+// --- D. Cấu hình CORS (Cho phép Frontend truy cập) ---
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        });
+    options.AddPolicy("AllowAll",
+        b => b.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader());
 });
 
+// --- E. Cấu hình Authentication (JWT) ---
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
+var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "SecretKeyMustBeLongerThan16Characters");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -50,94 +70,71 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero // Không cho phép lệch giờ (Token hết hạn là chặn ngay)
     };
 });
 
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-builder.Services.AddScoped<ILabelRepository, LabelRepository>();
-builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
-
-builder.Services.AddScoped<IRepository<Annotation>, Repository<Annotation>>();
-builder.Services.AddScoped<IRepository<DataItem>, Repository<DataItem>>();
-builder.Services.AddScoped<IRepository<ReviewLog>, Repository<ReviewLog>>();
-builder.Services.AddScoped<IRepository<UserProjectStat>, Repository<UserProjectStat>>();
-
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IProjectService, ProjectService>();
-builder.Services.AddScoped<ILabelService, LabelService>();
-builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<IReviewService, ReviewService>();
-
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-    });
-
+// --- F. Cấu hình Controllers & Swagger ---
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(option =>
+builder.Services.AddSwaggerGen(c =>
 {
-    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Data Labeling API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Data Labeling API", Version = "v1" });
 
-    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // Cấu hình nút "Authorize" (Ổ khóa) trên Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        In = ParameterLocation.Header,
-        Description = "Enter 'Bearer [your-token]'",
+        Description = "Nhập token vào ô bên dưới theo định dạng: Bearer {token}",
         Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
-                    Type=ReferenceType.SecurityScheme,
-                    Id="Bearer"
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
                 }
             },
-            new string[]{}
+            new string[] {}
         }
     });
-
-    var apiXmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var apiXmlPath = Path.Combine(AppContext.BaseDirectory, apiXmlFile);
-    if (File.Exists(apiXmlPath))
-    {
-        option.IncludeXmlComments(apiXmlPath);
-    }
-
-    var dtoXmlFile = "DTOs.xml";
-    var dtoXmlPath = Path.Combine(AppContext.BaseDirectory, dtoXmlFile);
-    if (File.Exists(dtoXmlPath))
-    {
-        option.IncludeXmlComments(dtoXmlPath);
-    }
 });
 
 var app = builder.Build();
 
+// ==================================================================
+// 2. CẤU HÌNH HTTP REQUEST PIPELINE (MIDDLEWARES)
+// ==================================================================
+
+// --- QUAN TRỌNG: Đăng ký Middleware xử lý lỗi toàn cục ---
+// Nó phải nằm TRƯỚC các middleware khác để bắt lỗi từ chúng
+app.UseMiddleware<ExceptionMiddleware>();
+
+// --- Data Seeder (Chạy khi khởi động app) ---
+// Tự động tạo Manager và Sample Data nếu chưa có
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
+        // Gọi hàm SeedData static từ file DataSeeder.cs
         await DataSeeder.SeedData(services);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Seeder Error: {ex.Message}");
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Lỗi xảy ra khi chạy Data Seeder.");
     }
 }
 
+// --- Môi trường Development ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -146,19 +143,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    }
-});
+// --- Kích hoạt CORS ---
+app.UseCors("AllowAll");
 
-app.UseRouting();
-app.UseCors("AllowReactApp");
-
-app.UseAuthentication();
+// --- Kích hoạt Authentication & Authorization ---
+app.UseAuthentication(); // Phải đứng trước Authorization
 app.UseAuthorization();
 
 app.MapControllers();

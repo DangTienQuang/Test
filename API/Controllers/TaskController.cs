@@ -1,5 +1,4 @@
 ﻿using BLL.Interfaces;
-using DTOs.Constants;
 using DTOs.Requests;
 using DTOs.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +8,7 @@ using System.Security.Claims;
 namespace API.Controllers
 {
     /// <summary>
-    /// Controller for managing tasks and assignments.
+    /// Controller quản lý các tác vụ (Task) của Annotator và việc giao việc của Manager.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -17,22 +16,22 @@ namespace API.Controllers
     public class TaskController : ControllerBase
     {
         private readonly ITaskService _taskService;
-        private readonly IProjectService _projectService;
 
-        public TaskController(ITaskService taskService, IProjectService projectService)
+        public TaskController(ITaskService taskService)
         {
             _taskService = taskService;
-            _projectService = projectService;
         }
 
         /// <summary>
-        /// Assigns tasks to an annotator.
+        /// (Manager) Giao việc cho nhân viên Annotator.
         /// </summary>
-        /// <param name="request">The assignment request details.</param>
-        /// <returns>A confirmation message.</returns>
-        /// <response code="200">Tasks assigned successfully.</response>
-        /// <response code="400">If assignment fails.</response>
+        /// <param name="request">Thông tin giao việc (Project ID, Annotator ID, Số lượng ảnh).</param>
+        /// <returns>Thông báo thành công.</returns>
+        /// <response code="200">Giao việc thành công.</response>
+        /// <response code="400">Lỗi giao việc (ví dụ: không đủ ảnh, user không tồn tại).</response>
+        /// <response code="401">User không phải là Manager.</response>
         [HttpPost("assign")]
+        [Authorize(Roles = "Manager")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
         public async Task<IActionResult> AssignTasks([FromBody] AssignTaskRequest request)
@@ -40,88 +39,79 @@ namespace API.Controllers
             try
             {
                 await _taskService.AssignTasksToAnnotatorAsync(request);
-                return Ok(new { Message = "Tasks assigned successfully" });
+                return Ok(new { Message = "Tasks assigned successfully." });
             }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
-        }
-
-        /// <summary>
-        /// Gets dashboard statistics for the current user.
-        /// </summary>
-        /// <returns>Statistics appropriate for the user's role (Manager or Annotator).</returns>
-        /// <response code="200">Returns statistics.</response>
-        /// <response code="401">If user is unauthorized.</response>
-        [HttpGet("dashboard-stats")]
-        [ProducesResponseType(typeof(ManagerStatsResponse), 200)]
-        [ProducesResponseType(typeof(AnnotatorStatsResponse), 200)]
-        [ProducesResponseType(typeof(void), 401)]
-        public async Task<IActionResult> GetMyStats()
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-            if (role == UserRoles.Manager || role == UserRoles.Admin)
+            catch (Exception ex)
             {
-                var managerStats = await _projectService.GetManagerStatsAsync(userId);
-                return Ok(managerStats);
+                return BadRequest(new { Message = ex.Message });
             }
-            var stats = await _taskService.GetAnnotatorStatsAsync(userId);
-            return Ok(stats);
         }
 
         /// <summary>
-        /// Gets tasks assigned to the current user.
+        /// (Annotator - Dashboard) Lấy danh sách Dự án được phân công.
         /// </summary>
-        /// <param name="projectId">Optional project ID to filter by.</param>
-        /// <param name="status">Optional status to filter by (e.g., Assigned, InProgress).</param>
-        /// <returns>A list of tasks.</returns>
-        /// <response code="200">Returns list of tasks.</response>
-        /// <response code="401">If user is unauthorized.</response>
-        [HttpGet("my-tasks")]
-        [ProducesResponseType(typeof(IEnumerable<TaskResponse>), 200)]
+        /// <remarks>
+        /// API này dùng cho màn hình Dashboard chính. 
+        /// Nó sẽ gom nhóm các ảnh lẻ tẻ thành các thẻ Dự án (Project Card).
+        /// Trả về tiến độ (%), deadline, và trạng thái tổng quan.
+        /// </remarks>
+        /// <returns>Danh sách các dự án mà user đang tham gia.</returns>
+        /// <response code="200">Trả về danh sách dự án thành công.</response>
+        /// <response code="401">Chưa đăng nhập.</response>
+        [HttpGet("my-projects")]
+        [ProducesResponseType(typeof(List<AssignedProjectResponse>), 200)]
         [ProducesResponseType(typeof(void), 401)]
-        public async Task<IActionResult> GetMyTasks([FromQuery] int projectId = 0, [FromQuery] string? status = null)
+        public async Task<IActionResult> GetMyProjects()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var tasks = await _taskService.GetMyTasksAsync(projectId, userId, status);
-            return Ok(tasks);
+            var projects = await _taskService.GetAssignedProjectsAsync(userId);
+            return Ok(projects);
         }
 
         /// <summary>
-        /// Gets details of a specific assignment task.
+        /// (Annotator - Work Area) Lấy danh sách Ảnh chi tiết trong một dự án để làm việc.
         /// </summary>
-        /// <param name="assignmentId">The unique identifier of the assignment.</param>
-        /// <returns>The task details.</returns>
-        /// <response code="200">Returns task details.</response>
-        /// <response code="404">If task is not found.</response>
-        /// <response code="400">If retrieval fails.</response>
-        /// <response code="401">If user is unauthorized.</response>
-        [HttpGet("detail/{assignmentId}")]
-        [ProducesResponseType(typeof(TaskResponse), 200)]
-        [ProducesResponseType(typeof(void), 404)]
-        [ProducesResponseType(typeof(object), 400)]
+        /// <remarks>
+        /// API này dùng khi user bấm vào một thẻ Dự án. 
+        /// Nó trả về toàn bộ list ảnh (Assignments) để FE xử lý nút Next/Back.
+        /// </remarks>
+        /// <param name="projectId">ID của dự án muốn làm.</param>
+        /// <returns>Danh sách ảnh kèm trạng thái và dữ liệu vẽ cũ (nếu có).</returns>
+        /// <response code="200">Trả về danh sách ảnh thành công.</response>
+        /// <response code="401">Chưa đăng nhập.</response>
+        [HttpGet("project/{projectId}/images")]
+        [ProducesResponseType(typeof(List<AssignmentResponse>), 200)]
         [ProducesResponseType(typeof(void), 401)]
-        public async Task<IActionResult> GetTaskDetail(int assignmentId)
+        public async Task<IActionResult> GetProjectImages(int projectId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            try
-            {
-                var task = await _taskService.GetTaskDetailAsync(assignmentId, userId);
-                if (task == null) return NotFound();
-                return Ok(task);
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            var images = await _taskService.GetTaskImagesAsync(projectId, userId);
+            return Ok(images);
         }
 
+        /// <summary>
+        /// (Annotator) Lưu nháp (Save Draft).
+        /// </summary>
+        /// <remarks>
+        /// Gọi API này khi user bấm nút "Next" hoặc "Save".
+        /// Hệ thống sẽ lưu đè dữ liệu vẽ (DataJSON) và cập nhật trạng thái thành 'InProgress'.
+        /// </remarks>
+        /// <param name="request">Chứa AssignmentId và cục DataJSON (Canvas).</param>
+        /// <returns>Thông báo thành công.</returns>
+        /// <response code="200">Lưu nháp thành công.</response>
+        /// <response code="400">Lỗi dữ liệu đầu vào.</response>
         [HttpPost("save-draft")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 400)]
         public async Task<IActionResult> SaveDraft([FromBody] SubmitAnnotationRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
             try
             {
                 await _taskService.SaveDraftAsync(userId, request);
@@ -132,18 +122,21 @@ namespace API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
         /// <summary>
-        /// Submits annotations for a task.
+        /// (Annotator) Nộp bài (Submit).
         /// </summary>
-        /// <param name="request">The submission request containing annotations.</param>
-        /// <returns>A confirmation message.</returns>
-        /// <response code="200">Task submitted successfully.</response>
-        /// <response code="400">If submission fails.</response>
-        /// <response code="401">If user is unauthorized.</response>
+        /// <remarks>
+        /// Gọi API này khi user bấm nút "Submit".
+        /// Hệ thống sẽ lưu dữ liệu vẽ và cập nhật trạng thái thành 'Submitted' (Chờ duyệt).
+        /// </remarks>
+        /// <param name="request">Chứa AssignmentId và cục DataJSON (Canvas).</param>
+        /// <returns>Thông báo thành công.</returns>
+        /// <response code="200">Nộp bài thành công.</response>
+        /// <response code="400">Lỗi nộp bài.</response>
         [HttpPost("submit")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
-        [ProducesResponseType(typeof(void), 401)]
         public async Task<IActionResult> SubmitTask([FromBody] SubmitAnnotationRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
