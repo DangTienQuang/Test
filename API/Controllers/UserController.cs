@@ -1,4 +1,4 @@
-﻿using BLL.Interfaces;
+using BLL.Interfaces;
 using DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +24,10 @@ namespace API.Controllers
         /// <summary>
         /// Gets the profile of the current logged-in user.
         /// </summary>
+        /// <returns>The user profile details.</returns>
+        /// <response code="200">Returns user profile.</response>
+        /// <response code="404">If user is not found.</response>
+        /// <response code="401">If user is unauthorized.</response>
         [HttpGet("profile")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 404)]
@@ -51,39 +55,14 @@ namespace API.Controllers
             });
         }
 
-        // --- 👇 ĐOẠN CODE CẦN THÊM VÀO 👇 ---
-
-        /// <summary>
-        /// Updates the profile (Name, Password) of the current user.
-        /// </summary>
-        [HttpPut("profile")]
-        [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
-        [ProducesResponseType(typeof(void), 401)]
-        public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateUserRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            try
-            {
-                // Bảo mật: Không cho phép user tự đổi Role của mình
-                request.Role = null;
-
-                // Tái sử dụng hàm UpdateUserAsync của Service
-                await _userService.UpdateUserAsync(userId, request);
-                return Ok(new { Message = "Profile updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
-        }
-        // ----------------------------------------
-
         /// <summary>
         /// Updates the payment information of the current user.
         /// </summary>
+        /// <param name="request">The payment update request.</param>
+        /// <returns>A confirmation message.</returns>
+        /// <response code="200">Payment info updated successfully.</response>
+        /// <response code="400">If update fails.</response>
+        /// <response code="401">If user is unauthorized.</response>
         [HttpPut("payment")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
@@ -104,8 +83,12 @@ namespace API.Controllers
             }
         }
 
-        // ... Các API Admin khác giữ nguyên ...
-
+        /// <summary>
+        /// Gets a list of all users (Admin only).
+        /// </summary>
+        /// <returns>A list of users.</returns>
+        /// <response code="200">Returns list of users.</response>
+        /// <response code="401">If user is unauthorized or not an Admin.</response>
         [HttpGet]
         [Authorize(Roles = "Admin, Manager")]
         public async Task<IActionResult> GetAllUsers()
@@ -114,8 +97,19 @@ namespace API.Controllers
             return Ok(users);
         }
 
+        /// <summary>
+        /// Creates a new user (Admin only).
+        /// </summary>
+        /// <param name="request">The registration request.</param>
+        /// <returns>A confirmation message and the new user's ID.</returns>
+        /// <response code="200">User created successfully.</response>
+        /// <response code="400">If creation fails.</response>
+        /// <response code="401">If user is unauthorized or not an Admin.</response>
         [HttpPost]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(void), 401)]
         public async Task<IActionResult> CreateUser([FromBody] RegisterRequest request)
         {
             try
@@ -129,8 +123,20 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// Updates an existing user (Admin only).
+        /// </summary>
+        /// <param name="id">The unique identifier of the user to update.</param>
+        /// <param name="request">The update request details.</param>
+        /// <returns>A confirmation message.</returns>
+        /// <response code="200">User updated successfully.</response>
+        /// <response code="400">If update fails.</response>
+        /// <response code="401">If user is unauthorized or not an Admin.</response>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(void), 401)]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest request)
         {
             try
@@ -144,8 +150,19 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// Deletes a user (Admin only).
+        /// </summary>
+        /// <param name="id">The unique identifier of the user to delete.</param>
+        /// <returns>A confirmation message.</returns>
+        /// <response code="200">User deleted successfully.</response>
+        /// <response code="400">If deletion fails.</response>
+        /// <response code="401">If user is unauthorized or not an Admin.</response>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(void), 401)]
         public async Task<IActionResult> DeleteUser(string id)
         {
             try

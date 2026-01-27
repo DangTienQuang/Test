@@ -46,7 +46,32 @@ namespace API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+        /// <summary>
+        /// (Annotator) Lấy chi tiết 1 ảnh cụ thể bằng ID.
+        /// </summary>
+        /// <remarks>
+        /// Dùng API này khi muốn nhảy trực tiếp đến một ảnh (ví dụ: bấm từ thông báo lỗi, hoặc F5 lại trang).
+        /// </remarks>
+        /// <param name="id">ID của Assignment (AssignmentId).</param>
+        /// <returns>Chi tiết ảnh và dữ liệu vẽ.</returns>
+        [HttpGet("assignment/{id}")]
+        [ProducesResponseType(typeof(AssignmentResponse), 200)]
+        [ProducesResponseType(typeof(object), 404)]
+        public async Task<IActionResult> GetSingleAssignment(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
+            try
+            {
+                var assignment = await _taskService.GetAssignmentByIdAsync(id, userId);
+                return Ok(assignment);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
         /// <summary>
         /// (Annotator - Dashboard) Lấy danh sách Dự án được phân công.
         /// </summary>

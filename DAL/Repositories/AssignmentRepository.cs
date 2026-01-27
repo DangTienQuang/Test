@@ -19,7 +19,7 @@ namespace DAL.Repositories
                 .Include(a => a.DataItem)
                 .Include(a => a.Project)
                     .ThenInclude(p => p.LabelClasses)
-                .Include(a => a.Annotations)
+                .Include(a => a.Annotations) 
                 .Include(a => a.ReviewLogs)
                 .Where(a => a.AnnotatorId == annotatorId);
 
@@ -32,8 +32,7 @@ namespace DAL.Repositories
             {
                 query = query.Where(a => a.Status == status);
             }
-
-            return await query.OrderByDescending(a => a.AssignedDate).ToListAsync();
+            return await query.OrderBy(a => a.Id).ToListAsync();
         }
 
         public async Task<List<DataItem>> GetUnassignedDataItemsAsync(int projectId, int quantity)
