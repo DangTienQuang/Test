@@ -1,5 +1,5 @@
 ﻿using Core.DTOs.Requests;
-using Core.Entities;
+using DTOs.Entities;
 
 namespace BLL.Interfaces
 {
@@ -16,5 +16,6 @@ namespace BLL.Interfaces
         Task UpdateUserAsync(string userId, UpdateUserRequest request);
         Task DeleteUserAsync(string userId);
         Task ToggleUserStatusAsync(string userId, bool isActive);
+        Task UpdateAvatarAsync(string userId, string avatarUrl);
     }
 }

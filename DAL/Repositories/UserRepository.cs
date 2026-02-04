@@ -1,5 +1,5 @@
 ﻿using DAL.Interfaces;
-using Core.Entities;
+using DTOs.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Repositories

@@ -56,19 +56,19 @@ namespace DAL.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ManagerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PricePerLabel = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     TotalBudget = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    AnnotationGuide = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ReviewChecklist = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MaxTaskDurationHours = table.Column<int>(type: "int", nullable: false),
-                    Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AllowGeometryTypes = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    AllowGeometryTypes = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AnnotationGuide = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaxTaskDurationHours = table.Column<int>(type: "int", nullable: false),
+                    PenaltyUnit = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -143,16 +143,40 @@ namespace DAL.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ProjectId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Color = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    GuideLine = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Color = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: false),
+                    GuideLine = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DefaultChecklist = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProjectId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LabelClasses", x => x.Id);
                     table.ForeignKey(
                         name: "FK_LabelClasses_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReviewChecklistItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProjectId = table.Column<int>(type: "int", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Weight = table.Column<int>(type: "int", nullable: false),
+                    IsCritical = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReviewChecklistItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReviewChecklistItems_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "Id",
@@ -250,7 +274,8 @@ namespace DAL.Migrations
                     DataJSON = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ClassId = table.Column<int>(type: "int", nullable: true),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LabelClassId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -261,6 +286,11 @@ namespace DAL.Migrations
                         principalTable: "Assignments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Annotations_LabelClasses_LabelClassId",
+                        column: x => x.LabelClassId,
+                        principalTable: "LabelClasses",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -301,6 +331,11 @@ namespace DAL.Migrations
                 name: "IX_Annotations_AssignmentId",
                 table: "Annotations",
                 column: "AssignmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Annotations_LabelClassId",
+                table: "Annotations",
+                column: "LabelClassId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Assignments_AnnotatorId",
@@ -354,6 +389,11 @@ namespace DAL.Migrations
                 column: "ManagerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ReviewChecklistItems_ProjectId",
+                table: "ReviewChecklistItems",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ReviewLogs_AssignmentId",
                 table: "ReviewLogs",
                 column: "AssignmentId");
@@ -384,16 +424,19 @@ namespace DAL.Migrations
                 name: "Invoices");
 
             migrationBuilder.DropTable(
-                name: "LabelClasses");
+                name: "PaymentInfos");
 
             migrationBuilder.DropTable(
-                name: "PaymentInfos");
+                name: "ReviewChecklistItems");
 
             migrationBuilder.DropTable(
                 name: "ReviewLogs");
 
             migrationBuilder.DropTable(
                 name: "UserProjectStats");
+
+            migrationBuilder.DropTable(
+                name: "LabelClasses");
 
             migrationBuilder.DropTable(
                 name: "Assignments");

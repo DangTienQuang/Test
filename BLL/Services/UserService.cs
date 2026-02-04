@@ -1,8 +1,8 @@
 ﻿using BLL.Interfaces;
 using Core.DTOs.Requests;
 using DAL.Interfaces;
-using Core.Constants;
-using Core.Entities;
+using DTOs.Constants;
+using DTOs.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -45,7 +45,15 @@ namespace BLL.Services
 
             return user;
         }
+        public async Task UpdateAvatarAsync(string userId, string avatarUrl)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new Exception("User not found");
 
+            user.AvatarUrl = avatarUrl;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
         public async Task<string?> LoginAsync(string email, string password)
         {
             var user = await _userRepository.GetUserByEmailAsync(email);

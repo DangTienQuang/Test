@@ -2,8 +2,8 @@
 using Core.DTOs.Requests;
 using Core.DTOs.Responses;
 using DAL.Interfaces;
-using Core.Constants;
-using Core.Entities;
+using DTOs.Constants;
+using DTOs.Entities;
 using System.Text.Json;
 
 namespace BLL.Services
@@ -13,21 +13,24 @@ namespace BLL.Services
         private readonly IAssignmentRepository _assignmentRepo;
         private readonly IRepository<ReviewLog> _reviewLogRepo;
         private readonly IRepository<DataItem> _dataItemRepo;
-        private readonly IRepository<UserProjectStat> _statsRepo;
+        private readonly IStatisticService _statisticService;
         private readonly IRepository<Project> _projectRepo;
+        private readonly IUserRepository _userRepo;
 
         public ReviewService(
             IAssignmentRepository assignmentRepo,
             IRepository<ReviewLog> reviewLogRepo,
             IRepository<DataItem> dataItemRepo,
-            IRepository<UserProjectStat> statsRepo,
-            IRepository<Project> projectRepo)
+            IStatisticService statisticService,
+            IRepository<Project> projectRepo,
+            IUserRepository userRepo)
         {
             _assignmentRepo = assignmentRepo;
             _reviewLogRepo = reviewLogRepo;
             _dataItemRepo = dataItemRepo;
-            _statsRepo = statsRepo;
+            _statisticService = statisticService;
             _projectRepo = projectRepo;
+            _userRepo = userRepo;
         }
 
         public async Task ReviewAssignmentAsync(string reviewerId, ReviewRequest request)
@@ -35,92 +38,78 @@ namespace BLL.Services
             var assignment = await _assignmentRepo.GetByIdAsync(request.AssignmentId);
             if (assignment == null) throw new Exception("Assignment not found");
 
+            var reviewer = await _userRepo.GetByIdAsync(reviewerId);
+            if (reviewer == null) throw new Exception("User not found");
+
+            if (reviewer.Role != UserRoles.Reviewer &&
+                reviewer.Role != UserRoles.Manager &&
+                reviewer.Role != UserRoles.Admin)
+            {
+                throw new Exception("Permission denied: Only Reviewers or Managers can review tasks.");
+            }
+
             if (assignment.ReviewerId != reviewerId)
                 throw new Exception("You are not assigned to review this task.");
 
-            if (assignment.Status != "Submitted")
+            if (assignment.Status != TaskStatusConstants.Submitted)
                 throw new Exception("This task is not ready for review.");
 
             var project = await _projectRepo.GetByIdAsync(assignment.ProjectId);
             if (project == null) throw new Exception("Project info not found");
 
-            var allStats = await _statsRepo.GetAllAsync();
-            var stats = allStats.FirstOrDefault(s => s.UserId == assignment.AnnotatorId && s.ProjectId == assignment.ProjectId);
-
-            if (stats == null)
-            {
-                stats = new UserProjectStat
-                {
-                    UserId = assignment.AnnotatorId,
-                    ProjectId = assignment.ProjectId,
-                    TotalAssigned = 0,
-                    EfficiencyScore = 100,
-                    EstimatedEarnings = 0,
-                    AverageQualityScore = 100,
-                    TotalReviewedTasks = 0,
-                    TotalCriticalErrors = 0
-                };
-                await _statsRepo.AddAsync(stats);
-            }
-
             double currentTaskScore = 0;
             int penaltyScore = 0;
+            bool isCritical = false;
 
             if (request.IsApproved)
             {
                 currentTaskScore = 100;
-                assignment.Status = "Completed";
-                stats.TotalApproved++;
-                stats.EstimatedEarnings = stats.TotalApproved * project.PricePerLabel;
+                assignment.Status = TaskStatusConstants.Approved;
 
                 if (assignment.DataItemId > 0)
                 {
                     var dataItem = await _dataItemRepo.GetByIdAsync(assignment.DataItemId);
                     if (dataItem != null)
                     {
-                        dataItem.Status = "Done";
+                        dataItem.Status = TaskStatusConstants.Approved;
                         _dataItemRepo.Update(dataItem);
                     }
                 }
             }
             else
             {
-                assignment.Status = "Rejected";
-                stats.TotalRejected++;
+                assignment.Status = TaskStatusConstants.Rejected;
                 int weight = 0;
 
-                if (!string.IsNullOrEmpty(project.ReviewChecklist) && !string.IsNullOrEmpty(request.ErrorCategory))
+                if (project.ChecklistItems != null &&
+                    project.ChecklistItems.Any() &&
+                    !string.IsNullOrEmpty(request.ErrorCategory))
                 {
-                    try
+                    var errorItem = project.ChecklistItems
+                        .FirstOrDefault(c => c.Code == request.ErrorCategory);
+
+                    if (errorItem != null)
                     {
-                        var checklistItems = JsonSerializer.Deserialize<List<ChecklistItemRequest>>(project.ReviewChecklist);
-                        var item = checklistItems?.FirstOrDefault(c => c.Code == request.ErrorCategory);
-                        if (item != null)
-                        {
-                            weight = item.Weight;
-                        }
+                        weight = errorItem.Weight;
+                        if (errorItem.IsCritical) isCritical = true;
                     }
-                    catch { }
                 }
 
-                if (weight >= 10)
-                {
-                    stats.TotalCriticalErrors++;
-                }
+                int unit = project.PenaltyUnit > 0 ? project.PenaltyUnit : 10;
+                penaltyScore = weight * unit;
 
-                penaltyScore = weight * 10;
                 currentTaskScore = Math.Max(0, 100 - penaltyScore);
             }
 
-            double totalScoreSoFar = (stats.AverageQualityScore * stats.TotalReviewedTasks) + currentTaskScore;
-            stats.TotalReviewedTasks++;
-            stats.AverageQualityScore = Math.Round(totalScoreSoFar / stats.TotalReviewedTasks, 2);
-
-            if (stats.TotalAssigned > 0)
-            {
-                stats.EfficiencyScore = ((float)stats.TotalApproved / stats.TotalAssigned) * 100;
-            }
-            stats.Date = DateTime.UtcNow;
+            await _statisticService.TrackReviewResultAsync(
+                assignment.AnnotatorId,
+                reviewerId,
+                assignment.ProjectId,
+                request.IsApproved,
+                currentTaskScore,
+                project.PricePerLabel,
+                isCritical
+            );
 
             var log = new ReviewLog
             {
@@ -134,7 +123,6 @@ namespace BLL.Services
             };
 
             await _reviewLogRepo.AddAsync(log);
-            _statsRepo.Update(stats);
             _assignmentRepo.Update(assignment);
 
             await _assignmentRepo.SaveChangesAsync();
@@ -147,80 +135,53 @@ namespace BLL.Services
             if (log.IsAudited) throw new Exception("This review has already been audited");
 
             var assignment = await _assignmentRepo.GetByIdAsync(log.AssignmentId);
-            if (assignment == null) throw new Exception("Assignment not found");
+            if (assignment == null) throw new Exception("Related assignment not found");
 
-            var allStats = await _statsRepo.GetAllAsync();
-            var reviewerStats = allStats.FirstOrDefault(s => s.UserId == log.ReviewerId && s.ProjectId == assignment.ProjectId);
-
-            if (reviewerStats == null)
-            {
-                reviewerStats = new UserProjectStat
-                {
-                    UserId = log.ReviewerId,
-                    ProjectId = assignment.ProjectId,
-                    ReviewerQualityScore = 100,
-                    TotalReviewsDone = 0,
-                    TotalAuditedReviews = 0,
-                    TotalCorrectDecisions = 0
-                };
-                await _statsRepo.AddAsync(reviewerStats);
-            }
+            await _statisticService.TrackAuditResultAsync(log.ReviewerId, assignment.ProjectId, request.IsCorrectDecision);
 
             log.IsAudited = true;
             log.AuditResult = request.IsCorrectDecision ? "Agree" : "Disagree";
 
-            reviewerStats.TotalAuditedReviews++;
-
-            if (request.IsCorrectDecision)
-            {
-                reviewerStats.TotalCorrectDecisions++;
-            }
-
-            if (reviewerStats.TotalAuditedReviews > 0)
-            {
-                double accuracy = (double)reviewerStats.TotalCorrectDecisions / reviewerStats.TotalAuditedReviews;
-                reviewerStats.ReviewerQualityScore = Math.Round(accuracy * 100, 2);
-            }
-
             await _reviewLogRepo.SaveChangesAsync();
-            _statsRepo.Update(reviewerStats);
-            await _statsRepo.SaveChangesAsync();
         }
 
         public async Task<List<TaskResponse>> GetTasksForReviewAsync(int projectId, string reviewerId)
         {
-            var assignments = await _assignmentRepo.GetAssignmentsForReviewerAsync(projectId);
+            var assignments = await _assignmentRepo.GetAssignmentsForReviewerAsync(projectId, reviewerId);
 
-            var myAssignments = assignments.Where(a => a.ReviewerId == reviewerId).ToList();
-
-            return myAssignments.Select(a => new TaskResponse
+            return assignments.Select(a =>
             {
-                AssignmentId = a.Id,
-                DataItemId = a.DataItemId,
-                StorageUrl = a.DataItem?.StorageUrl ?? "",
-                ProjectName = a.Project?.Name ?? "",
-                Status = a.Status,
-                Deadline = a.Project?.Deadline ?? DateTime.MinValue,
-                Labels = a.Project?.LabelClasses.Select(l => new LabelResponse
+                var latestAnnotation = a.Annotations?.OrderByDescending(an => an.CreatedAt).FirstOrDefault();
+                object? annotationJson = null;
+                if (latestAnnotation != null)
                 {
-                    Id = l.Id,
-                    Name = l.Name,
-                    Color = l.Color,
-                    GuideLine = l.GuideLine
-                }).ToList() ?? new List<LabelResponse>(),
+                    if (!string.IsNullOrEmpty(latestAnnotation.DataJSON))
+                    {
+                        try { annotationJson = JsonDocument.Parse(latestAnnotation.DataJSON).RootElement; } catch { }
+                    }
+                    else if (!string.IsNullOrEmpty(latestAnnotation.Value))
+                    {
+                        try { annotationJson = JsonDocument.Parse(latestAnnotation.Value).RootElement; } catch { }
+                    }
+                }
 
-                ExistingAnnotations = a.Annotations.Select(an =>
+                return new TaskResponse
                 {
-                    if (!string.IsNullOrEmpty(an.DataJSON))
+                    AssignmentId = a.Id,
+                    DataItemId = a.DataItemId,
+                    StorageUrl = a.DataItem?.StorageUrl ?? "",
+                    ProjectName = a.Project?.Name ?? "",
+                    Status = a.Status,
+                    Deadline = a.Project?.Deadline ?? DateTime.MinValue,
+                    Labels = a.Project?.LabelClasses.Select(l => new LabelResponse
                     {
-                        return (object)JsonDocument.Parse(an.DataJSON).RootElement;
-                    }
-                    else if (!string.IsNullOrEmpty(an.Value))
-                    {
-                        return (object)JsonDocument.Parse(an.Value).RootElement;
-                    }
-                    return null;
-                }).Where(x => x != null).ToList()
+                        Id = l.Id,
+                        Name = l.Name,
+                        Color = l.Color,
+                        GuideLine = l.GuideLine
+                    }).ToList() ?? new List<LabelResponse>(),
+                    ExistingAnnotations = annotationJson != null ? new List<object> { annotationJson } : new List<object>()
+                };
             }).ToList();
         }
     }

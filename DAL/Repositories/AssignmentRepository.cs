@@ -1,6 +1,7 @@
 ﻿using Core.DTOs.Responses;
 using DAL.Interfaces;
-using Core.Entities;
+using DTOs.Constants;
+using DTOs.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Repositories
@@ -19,7 +20,7 @@ namespace DAL.Repositories
                 .Include(a => a.DataItem)
                 .Include(a => a.Project)
                     .ThenInclude(p => p.LabelClasses)
-                .Include(a => a.Annotations) 
+                .Include(a => a.Annotations)
                 .Include(a => a.ReviewLogs)
                 .Where(a => a.AnnotatorId == annotatorId);
 
@@ -38,7 +39,7 @@ namespace DAL.Repositories
         public async Task<List<DataItem>> GetUnassignedDataItemsAsync(int projectId, int quantity)
         {
             return await AppContext.DataItems
-                .Where(d => d.ProjectId == projectId && d.Status == "New")
+                .Where(d => d.ProjectId == projectId && d.Status == TaskStatusConstants.New)
                 .Take(quantity)
                 .ToListAsync();
         }
@@ -54,14 +55,15 @@ namespace DAL.Repositories
                 .FirstOrDefaultAsync(a => a.Id == assignmentId);
         }
 
-        public async Task<List<Assignment>> GetAssignmentsForReviewerAsync(int projectId)
+        public async Task<List<Assignment>> GetAssignmentsForReviewerAsync(int projectId, string reviewerId)
         {
             return await AppContext.Assignments
                 .Include(a => a.DataItem)
                 .Include(a => a.Project)
                     .ThenInclude(p => p.LabelClasses)
                 .Include(a => a.Annotations)
-                .Where(a => a.ProjectId == projectId && a.Status == "Submitted")
+                .Where(a => a.ProjectId == projectId && a.ReviewerId == reviewerId && a.Status == TaskStatusConstants.Submitted)
+                .OrderBy(a => a.Id)
                 .ToListAsync();
         }
 
@@ -79,9 +81,9 @@ namespace DAL.Repositories
                 string status = item.Status?.Trim() ?? "";
                 int count = item.Count;
                 stats.TotalAssigned += count;
-                if (string.Equals(status, "Submitted", StringComparison.OrdinalIgnoreCase)) stats.Submitted += count;
-                else if (string.Equals(status, "Rejected", StringComparison.OrdinalIgnoreCase)) stats.Rejected += count;
-                else if (string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase) || string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase)) stats.Completed += count;
+                if (string.Equals(status, TaskStatusConstants.Submitted, StringComparison.OrdinalIgnoreCase)) stats.Submitted += count;
+                else if (string.Equals(status, TaskStatusConstants.Rejected, StringComparison.OrdinalIgnoreCase)) stats.Rejected += count;
+                else if (string.Equals(status, TaskStatusConstants.Approved, StringComparison.OrdinalIgnoreCase)) stats.Completed += count; // Approved chính là Completed
                 else stats.Pending += count;
             }
             return stats;

@@ -1,4 +1,4 @@
-namespace Core.Constants
+﻿namespace DTOs.Constants
 {
     public static class UserRoles
     {

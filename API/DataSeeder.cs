@@ -1,23 +1,18 @@
 ﻿using DAL;
-using Core.Constants;
-using Core.Entities;
+using DTOs.Constants;
+using DTOs.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace API
 {
     public static class DataSeeder
     {
-        /// <summary>
-        /// Hàm Seed dữ liệu chính.
-        /// </summary>
-        /// <param name="serviceProvider">ServiceProvider để tạo scope.</param>
-        /// <param name="isDevelopment">Biến xác định môi trường (lấy từ IWebHostEnvironment).</param>
         public static async Task SeedData(IServiceProvider serviceProvider, bool isDevelopment)
         {
             using (var scope = serviceProvider.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                await SeedSystemAdmin(context);
+
                 if (isDevelopment)
                 {
                     await SeedSampleDataForTesting(context);
@@ -25,39 +20,26 @@ namespace API
             }
         }
 
-        private static async Task SeedSystemAdmin(ApplicationDbContext context)
-        {
-            if (!await context.Users.AnyAsync(u => u.Role == UserRoles.Admin))
-            {
-                var admin = new User
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Email = "admin@system.com",
-                    FullName = "System Administrator",
-                    Role = UserRoles.Admin,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-                    IsActive = true
-                };
-
-                context.Users.Add(admin);
-                await context.SaveChangesAsync();
-            }
-        }
-
         private static async Task SeedSampleDataForTesting(ApplicationDbContext context)
         {
-            if (await context.Projects.AnyAsync()) return;
+            if (await context.Users.AnyAsync()) return;
+
+            var adminId = Guid.NewGuid().ToString();
             var managerId = Guid.NewGuid().ToString();
-            var manager = new User
+            var annotatorId = Guid.NewGuid().ToString();
+            var reviewerId = Guid.NewGuid().ToString();
+
+            var users = new List<User>
             {
-                Id = managerId,
-                Email = "manager@test.com",
-                FullName = "Project Manager Test",
-                Role = UserRoles.Manager,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-                IsActive = true
+                new User { Id = adminId, FullName = "Admin User", Email = "admin@system.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"), Role = UserRoles.Admin, IsActive = true },
+                new User { Id = managerId, FullName = "Manager User", Email = "manager@system.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"), Role = UserRoles.Manager, IsActive = true },
+                new User { Id = annotatorId, FullName = "Annotator User", Email = "annotator@system.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"), Role = UserRoles.Annotator, IsActive = true },
+                new User { Id = reviewerId, FullName = "Reviewer User", Email = "reviewer@system.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"), Role = UserRoles.Reviewer, IsActive = true }
             };
-            context.Users.Add(manager);
+
+            await context.Users.AddRangeAsync(users);
+            await context.SaveChangesAsync();
+
             var project = new Project
             {
                 Name = "Dự án Thử nghiệm (Dev Only)",
@@ -68,13 +50,15 @@ namespace API
                 Deadline = DateTime.UtcNow.AddDays(30),
                 CreatedDate = DateTime.UtcNow,
                 AllowGeometryTypes = "Rectangle",
+                AnnotationGuide = "Đây là hướng dẫn gán nhãn mẫu cho dự án thử nghiệm.",
+                PenaltyUnit = 10,
                 LabelClasses = new List<LabelClass>
                 {
                     new LabelClass { Name = "Object", Color = "#FF0000", GuideLine = "Vẽ khung bao quanh vật thể." }
                 }
             };
-            context.Projects.Add(project);
 
+            await context.Projects.AddAsync(project);
             await context.SaveChangesAsync();
         }
     }
