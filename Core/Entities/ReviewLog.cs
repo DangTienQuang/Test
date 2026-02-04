@@ -1,0 +1,28 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Core.Entities
+{
+    public class ReviewLog
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int AssignmentId { get; set; }
+        [ForeignKey("AssignmentId")]
+        public Assignment? Assignment { get; set; }
+
+        public string ReviewerId { get; set; } = string.Empty;
+        [ForeignKey("ReviewerId")]
+        public User? Reviewer { get; set; }
+
+        public string Decision { get; set; } = string.Empty;
+        public string? Comment { get; set; }
+        public string? ErrorCategory { get; set; }
+        public string Verdict { get; set; } = "Rejected";
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int ScorePenalty { get; set; } = 0;
+        public bool IsAudited { get; set; } = false;
+        public string? AuditResult { get; set; }
+    }
+}
