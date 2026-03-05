@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [Route("api/projects")]
+    [Tags("3. Project Management")]
     [ApiController]
     [Authorize]
     public class ProjectFinanceController : ControllerBase
@@ -16,7 +17,7 @@ namespace API.Controllers
             _projectService = projectService;
         }
 
-        [HttpPost("{projectId}/generate-invoice")]
+        [HttpPost("{projectId}/invoices")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GenerateInvoice(int projectId)
         {
@@ -27,7 +28,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }

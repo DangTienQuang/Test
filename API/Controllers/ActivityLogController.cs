@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [Route("api/logs")]
+    [Tags("6. Dispute & Logs")]
     [ApiController]
     [Authorize]
     public class ActivityLogController : ControllerBase
@@ -17,7 +18,7 @@ namespace API.Controllers
             _logService = logService;
         }
 
-        [HttpGet("system")]
+        [HttpGet("systems")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetSystemLogs()
         {
@@ -25,7 +26,7 @@ namespace API.Controllers
             return Ok(logs);
         }
 
-        [HttpGet("project/{projectId}")]
+        [HttpGet("projects/{projectId}")]
         [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetProjectLogs(int projectId)
         {

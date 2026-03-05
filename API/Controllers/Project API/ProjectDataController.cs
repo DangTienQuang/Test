@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 namespace API.Controllers
 {
     [Route("api/projects")]
+    [Tags("3. Project Management")]
     [ApiController]
     [Authorize]
     public class ProjectDataController : ControllerBase
@@ -26,7 +27,7 @@ namespace API.Controllers
             _env = env;
         }
 
-        [HttpPost("{projectId}/import")]
+        [HttpPost("{projectId}/imports")]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> ImportData(int projectId, [FromBody] ImportDataRequest request)
         {
@@ -37,11 +38,11 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
-        [HttpPost("{projectId}/upload-direct")]
+        [HttpPost("{projectId}/direct-uploads")]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> UploadDirect(int projectId, [FromForm] List<IFormFile> files)
         {
@@ -49,7 +50,7 @@ namespace API.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             if (files == null || !files.Any())
-                return BadRequest(new { Message = "Please select at least one file to upload." });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = "Please select at least one file to upload." });
 
             try
             {
@@ -63,7 +64,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -76,7 +77,7 @@ namespace API.Controllers
             return Ok(buckets);
         }
 
-        [HttpGet("{projectId}/export")]
+        [HttpGet("{projectId}/exports")]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> ExportData(int projectId)
         {
@@ -91,7 +92,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }

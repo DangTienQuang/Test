@@ -7,7 +7,8 @@ namespace API.Controllers
     /// <summary>
     /// Provides APIs for user authentication and account registration.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/auth")]
+    [Tags("1. Authentication")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -62,7 +63,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -96,7 +97,7 @@ namespace API.Controllers
 
                 if (token == null)
                 {
-                    return Unauthorized(new { Message = "Invalid email or password" });
+                    return Unauthorized(new Core.DTOs.Responses.ErrorResponse { Message = "Invalid email or password" });
                 }
 
                 return Ok(new
@@ -108,7 +109,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }

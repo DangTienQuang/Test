@@ -84,14 +84,15 @@ namespace API.Middlewares
 
             context.Response.StatusCode = statusCode;
 
-            var response = new
+            var response = new Core.DTOs.Responses.ErrorResponse
             {
-                StatusCode = statusCode,
-                Message = message,
-                Details = _env.IsDevelopment() ? ex.StackTrace?.ToString() : null
+                Message = message
             };
 
-            var json = JsonSerializer.Serialize(response);
+            var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
             await context.Response.WriteAsync(json);
         }
     }

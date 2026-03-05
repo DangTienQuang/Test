@@ -10,7 +10,8 @@ namespace API.Controllers
     /// Provides APIs for managing label definitions within a project.
     /// Labels are used by annotators during the data labeling process.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/labels")]
+    [Tags("4. Task & Annotation")]
     [ApiController]
     [Authorize]
     public class LabelController : ControllerBase
@@ -51,7 +52,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -79,7 +80,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -106,7 +107,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }

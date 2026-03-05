@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/projects")]
+    [Tags("3. Project Management")]
     [ApiController]
     [Authorize]
     public class ProjectStatsController : ControllerBase
@@ -16,7 +17,7 @@ namespace API.Controllers
             _projectService = projectService;
         }
 
-        [HttpGet("{projectId}")]
+        [HttpGet("{projectId}/statistics")]
         [Authorize(Roles = "Manager,Admin,Reviewer")]
         public async Task<IActionResult> GetProjectStatistics(int projectId)
         {
@@ -27,11 +28,11 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
-        [HttpGet("manager/{managerId}")]
+        [HttpGet("managers/{managerId}/statistics")]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> GetManagerStats(string managerId)
         {
@@ -42,7 +43,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }

@@ -8,6 +8,7 @@ using System.Security.Claims;
 namespace API.Controllers
 {
     [Route("api/disputes")]
+    [Tags("6. Dispute & Logs")]
     [ApiController]
     [Authorize]
     public class DisputeController : ControllerBase
@@ -28,10 +29,11 @@ namespace API.Controllers
             return Ok(new { Message = "Dispute submitted successfully." });
         }
 
-        [HttpPost("resolve")]
+        [HttpPost("{id}/resolutions")]
         [Authorize(Roles = "Manager,Admin")]
-        public async Task<IActionResult> ResolveDispute([FromBody] ResolveDisputeRequest request)
+        public async Task<IActionResult> ResolveDispute(int id, [FromBody] ResolveDisputeRequest request)
         {
+            request.DisputeId = id;
             await _disputeService.ResolveDisputeAsync(request);
             return Ok(new { Message = "Dispute resolved." });
         }

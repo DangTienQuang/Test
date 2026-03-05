@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/projects")]
+    [Tags("3. Project Management")]
     [ApiController]
     [Authorize]
     public class ProjectController : ControllerBase
@@ -31,7 +32,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -46,7 +47,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -57,16 +58,16 @@ namespace API.Controllers
             try
             {
                 var project = await _projectService.GetProjectDetailsAsync(id);
-                if (project == null) return NotFound(new { Message = "Project not found." });
+                if (project == null) return NotFound(new Core.DTOs.Responses.ErrorResponse { Message = "Project not found." });
                 return Ok(project);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
-        [HttpGet("manager/{managerId}")]
+        [HttpGet("managers/{managerId}")]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> GetProjectsByManager(string managerId)
         {
@@ -77,7 +78,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -92,7 +93,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }
