@@ -53,7 +53,14 @@ namespace API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
-
+        [HttpGet("project/{projectId}/bucket/{bucketId}")]
+        [Authorize(Roles = "Annotator,Manager,Admin")]
+        public async Task<IActionResult> GetTasksByBucket(int projectId, int bucketId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var tasks = await _taskService.GetTasksByBucketAsync(projectId, bucketId, userId);
+            return Ok(tasks);
+        }
         // ======================================================
         // ANNOTATOR - DASHBOARD APIs
         // ======================================================
@@ -84,7 +91,27 @@ namespace API.Controllers
         // ======================================================
         // ANNOTATOR - WORK AREA APIs
         // ======================================================
+        [HttpPost("submit-multiple")]
+        [Authorize(Roles = "Annotator")]
+        public async Task<IActionResult> SubmitMultipleTasks([FromBody] SubmitMultipleTasksRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
+            if (request.AssignmentIds == null || !request.AssignmentIds.Any())
+                return BadRequest(new { Message = "Assignment list cannot be empty." });
+
+            try
+            {
+                var result = await _taskService.SubmitMultipleTasksAsync(userId, request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
         /// <summary>
         /// (Annotator - Work Area) Get all images (assignments) of a project.
         /// </summary>
