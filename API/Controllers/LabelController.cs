@@ -10,9 +10,10 @@ namespace API.Controllers
     /// Provides APIs for managing label definitions within a project.
     /// Labels are used by annotators during the data labeling process.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/labels")]
     [ApiController]
     [Authorize]
+    [Tags("3. Project Management")]
     public class LabelController : ControllerBase
     {
         private readonly ILabelService _labelService;
@@ -39,9 +40,11 @@ namespace API.Controllers
         /// <returns>The newly created label information.</returns>
         /// <response code="200">Label created successfully.</response>
         /// <response code="400">Label creation failed due to validation or business rules.</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpPost]
         [ProducesResponseType(typeof(LabelResponse), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> CreateLabel([FromBody] CreateLabelRequest request)
         {
             try
@@ -51,7 +54,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -67,9 +70,11 @@ namespace API.Controllers
         /// <returns>The updated label details.</returns>
         /// <response code="200">Label updated successfully.</response>
         /// <response code="400">Update failed (e.g., label not found or invalid data).</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(LabelResponse), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> UpdateLabel(int id, [FromBody] UpdateLabelRequest request)
         {
             try
@@ -79,7 +84,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -94,9 +99,11 @@ namespace API.Controllers
         /// <returns>A confirmation message.</returns>
         /// <response code="200">Label deleted successfully.</response>
         /// <response code="400">Deletion failed because the label is in use or does not exist.</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> DeleteLabel(int id)
         {
             try
@@ -106,7 +113,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
     }

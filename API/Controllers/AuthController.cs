@@ -1,5 +1,6 @@
 using BLL.Interfaces;
 using Core.DTOs.Requests;
+using Core.DTOs.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -7,8 +8,9 @@ namespace API.Controllers
     /// <summary>
     /// Provides APIs for user authentication and account registration.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [ApiController]
+    [Tags("1. Authentication")]
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -35,14 +37,9 @@ namespace API.Controllers
         /// <returns>
         /// A confirmation message and the newly created user's unique identifier.
         /// </returns>
-        /// <response code="200">User registered successfully.</response>
-        /// <response code="400">
-        /// Registration failed due to validation errors
-        /// (e.g., email already exists or invalid role).
-        /// </response>
         [HttpPost("register")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             try
@@ -62,7 +59,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -81,13 +78,10 @@ namespace API.Controllers
         /// <returns>
         /// A JWT access token along with token metadata.
         /// </returns>
-        /// <response code="200">Login successful and token issued.</response>
-        /// <response code="401">Authentication failed due to invalid credentials.</response>
-        /// <response code="400">Login request is invalid.</response>
         [HttpPost("login")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 401)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             try
@@ -96,7 +90,7 @@ namespace API.Controllers
 
                 if (token == null)
                 {
-                    return Unauthorized(new { Message = "Invalid email or password" });
+                    return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "Invalid email or password" });
                 }
 
                 return Ok(new
@@ -108,7 +102,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
     }

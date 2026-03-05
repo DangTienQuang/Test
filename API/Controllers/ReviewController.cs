@@ -12,9 +12,10 @@ namespace API.Controllers
     /// Controller responsible for reviewing annotation tasks
     /// and auditing reviewer quality.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/reviews")]
     [ApiController]
     [Authorize]
+    [Tags("5. Review & QA")]
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _reviewService;
@@ -27,14 +28,21 @@ namespace API.Controllers
         // ======================================================
         // REVIEWER – TASK REVIEW
         // ======================================================
+        /// <summary>
+        /// Get projects assigned to the current reviewer.
+        /// </summary>
+        /// <response code="200">Projects retrieved successfully.</response>
+        /// <response code="400">Invalid request.</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpGet("projects")]
         [Authorize(Roles = "Reviewer,Manager,Admin")]
         [ProducesResponseType(typeof(IEnumerable<AssignedProjectResponse>), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> GetReviewerProjects()
         {
             var reviewerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(reviewerId)) return Unauthorized();
+            if (string.IsNullOrEmpty(reviewerId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -43,7 +51,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
         /// <summary>
@@ -60,14 +68,16 @@ namespace API.Controllers
         /// <response code="200">Review submitted successfully.</response>
         /// <response code="400">Review submission failed.</response>
         /// <response code="401">User is not authenticated.</response>
+        /// <response code="401">User is not authenticated.</response>
         [HttpPost("submit")]
         [Authorize(Roles = "Reviewer,Manager,Admin")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> ReviewTask([FromBody] ReviewRequest request)
         {
             var reviewerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(reviewerId)) return Unauthorized();
+            if (string.IsNullOrEmpty(reviewerId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -79,7 +89,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -101,14 +111,16 @@ namespace API.Controllers
         /// <response code="200">Audit recorded successfully.</response>
         /// <response code="400">Audit failed.</response>
         /// <response code="401">User is not authorized.</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpPost("audit")]
         [Authorize(Roles = "Manager,Admin")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> AuditReview([FromBody] AuditReviewRequest request)
         {
             var managerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(managerId)) return Unauthorized();
+            if (string.IsNullOrEmpty(managerId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -117,7 +129,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -135,14 +147,16 @@ namespace API.Controllers
         /// <returns>List of assignments awaiting review.</returns>
         /// <response code="200">Tasks retrieved successfully.</response>
         /// <response code="400">Failed to retrieve tasks.</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpGet("project/{projectId}")]
         [Authorize(Roles = "Reviewer,Manager,Admin")]
         [ProducesResponseType(typeof(IEnumerable<TaskResponse>), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> GetTasksForReview(int projectId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -151,7 +165,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
     }

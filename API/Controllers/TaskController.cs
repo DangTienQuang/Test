@@ -2,6 +2,7 @@
 using Core.DTOs.Requests;
 using Core.DTOs.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Core.DTOs.Responses;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -11,9 +12,10 @@ namespace API.Controllers
     /// Controller for managing annotation tasks,
     /// including task assignment by Managers and task execution by Annotators.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/tasks")]
     [ApiController]
     [Authorize]
+    [Tags("4. Task & Annotation")]
     public class TaskController : ControllerBase
     {
         private readonly ITaskService _taskService;
@@ -40,7 +42,7 @@ namespace API.Controllers
         [HttpPost("assign")]
         [Authorize(Roles = "Manager")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> AssignTasks([FromBody] AssignTaskRequest request)
         {
             try
@@ -50,11 +52,22 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
+        /// <summary>
+        /// Get tasks by bucket ID within a project.
+        /// </summary>
+        /// <param name="projectId">The project ID.</param>
+        /// <param name="bucketId">The bucket ID.</param>
+        /// <response code="200">Tasks retrieved successfully.</response>
+        /// <response code="400">Invalid request.</response>
+        /// <response code="401">User is not authorized.</response>
         [HttpGet("project/{projectId}/bucket/{bucketId}")]
         [Authorize(Roles = "Annotator,Manager,Admin")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> GetTasksByBucket(int projectId, int bucketId)
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -78,11 +91,11 @@ namespace API.Controllers
         /// <response code="401">User is not authenticated.</response>
         [HttpGet("my-projects")]
         [ProducesResponseType(typeof(List<AssignedProjectResponse>), 200)]
-        [ProducesResponseType(typeof(void), 401)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> GetMyProjects()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             var projects = await _taskService.GetAssignedProjectsAsync(userId);
             return Ok(projects);
@@ -91,16 +104,30 @@ namespace API.Controllers
         // ======================================================
         // ANNOTATOR - WORK AREA APIs
         // ======================================================
-        [HttpPost("submit-multiple")]
+        /// <summary>
+        /// Submits multiple annotation tasks at once (Batch Submit).
+        /// </summary>
+        /// <remarks>
+        /// Only applies to users with 'Annotator' role.
+        /// Ignores tasks that do not have draft annotations saved.
+        /// </remarks>
+        /// <param name="request">Payload containing a list of Assignment IDs to submit.</param>
+        /// <response code="200">Tasks submitted successfully.</response>
+        /// <response code="400">Submission failed.</response>
+        /// <response code="401">User is not authorized.</response>
+        [HttpPost("batch-submit")]
         [Authorize(Roles = "Annotator")]
+        [ProducesResponseType(typeof(SubmitMultipleTasksResponse), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> SubmitMultipleTasks([FromBody] SubmitMultipleTasksRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+                return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             if (request.AssignmentIds == null || !request.AssignmentIds.Any())
-                return BadRequest(new { Message = "Assignment list cannot be empty." });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = "Assignment list cannot be empty." });
 
             try
             {
@@ -109,7 +136,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
         /// <summary>
@@ -125,11 +152,12 @@ namespace API.Controllers
         /// <response code="401">User is not authenticated.</response>
         [HttpGet("project/{projectId}/images")]
         [ProducesResponseType(typeof(List<AssignmentResponse>), 200)]
-        [ProducesResponseType(typeof(void), 401)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> GetProjectImages(int projectId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             var images = await _taskService.GetTaskImagesAsync(projectId, userId);
             return Ok(images);
@@ -146,12 +174,16 @@ namespace API.Controllers
         /// <param name="projectId">Project ID.</param>
         /// <param name="dataItemId">Target data item ID.</param>
         /// <returns>Assignment detail.</returns>
+        /// <response code="400">Jump failed.</response>
+        /// <response code="401">User is not authenticated.</response>
         [HttpGet("project/{projectId}/jump/{dataItemId}")]
         [ProducesResponseType(typeof(AssignmentResponse), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> JumpToImage(int projectId, int dataItemId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -160,7 +192,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -172,13 +204,18 @@ namespace API.Controllers
         /// </remarks>
         /// <param name="id">Assignment ID.</param>
         /// <returns>Assignment detail including image and annotation data.</returns>
+        /// <response code="400">Failed to get assignment.</response>
+        /// <response code="401">User is not authenticated.</response>
+        /// <response code="404">Assignment not found.</response>
         [HttpGet("assignment/{id}")]
         [ProducesResponseType(typeof(AssignmentResponse), 200)]
-        [ProducesResponseType(typeof(object), 404)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
+        [ProducesResponseType(typeof(ErrorResponse), 404)]
         public async Task<IActionResult> GetSingleAssignment(int id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -187,7 +224,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -208,13 +245,14 @@ namespace API.Controllers
         /// <returns>Save result.</returns>
         /// <response code="200">Draft saved successfully.</response>
         /// <response code="400">Invalid input data.</response>
-        [HttpPost("save-draft")]
+        [HttpPost("draft")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> SaveDraft([FromBody] SubmitAnnotationRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -223,7 +261,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
 
@@ -240,13 +278,15 @@ namespace API.Controllers
         /// <returns>Submit result.</returns>
         /// <response code="200">Task submitted successfully.</response>
         /// <response code="400">Submission failed.</response>
+        /// <response code="401">User is not authenticated.</response>
         [HttpPost("submit")]
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(typeof(object), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
         public async Task<IActionResult> SubmitTask([FromBody] SubmitAnnotationRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new ErrorResponse { StatusCode = 401, Message = "User is not authenticated." });
 
             try
             {
@@ -255,7 +295,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ErrorResponse { StatusCode = 400, Message = ex.Message });
             }
         }
     }
