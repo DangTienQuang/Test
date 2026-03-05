@@ -11,7 +11,8 @@ namespace API.Controllers
     /// Controller for managing annotation tasks,
     /// including task assignment by Managers and task execution by Annotators.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/tasks")]
+    [Tags("4. Task & Annotation")]
     [ApiController]
     [Authorize]
     public class TaskController : ControllerBase
@@ -37,7 +38,7 @@ namespace API.Controllers
         /// <response code="200">Tasks assigned successfully.</response>
         /// <response code="400">Assignment failed (e.g. insufficient images, user not found).</response>
         /// <response code="401">User is not authorized as Manager.</response>
-        [HttpPost("assign")]
+        [HttpPost("assignments")]
         [Authorize(Roles = "Manager")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
@@ -50,10 +51,10 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
-        [HttpGet("project/{projectId}/bucket/{bucketId}")]
+        [HttpGet("projects/{projectId}/buckets/{bucketId}")]
         [Authorize(Roles = "Annotator,Manager,Admin")]
         public async Task<IActionResult> GetTasksByBucket(int projectId, int bucketId)
         {
@@ -76,7 +77,7 @@ namespace API.Controllers
         /// <returns>List of projects assigned to the current user.</returns>
         /// <response code="200">Projects retrieved successfully.</response>
         /// <response code="401">User is not authenticated.</response>
-        [HttpGet("my-projects")]
+        [HttpGet("me/projects")]
         [ProducesResponseType(typeof(List<AssignedProjectResponse>), 200)]
         [ProducesResponseType(typeof(void), 401)]
         public async Task<IActionResult> GetMyProjects()
@@ -91,7 +92,7 @@ namespace API.Controllers
         // ======================================================
         // ANNOTATOR - WORK AREA APIs
         // ======================================================
-        [HttpPost("submit-multiple")]
+        [HttpPost("batch-submissions")]
         [Authorize(Roles = "Annotator")]
         public async Task<IActionResult> SubmitMultipleTasks([FromBody] SubmitMultipleTasksRequest request)
         {
@@ -100,7 +101,7 @@ namespace API.Controllers
                 return Unauthorized();
 
             if (request.AssignmentIds == null || !request.AssignmentIds.Any())
-                return BadRequest(new { Message = "Assignment list cannot be empty." });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = "Assignment list cannot be empty." });
 
             try
             {
@@ -109,7 +110,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
         /// <summary>
@@ -123,7 +124,7 @@ namespace API.Controllers
         /// <returns>List of assignments with status and existing annotation data.</returns>
         /// <response code="200">Images retrieved successfully.</response>
         /// <response code="401">User is not authenticated.</response>
-        [HttpGet("project/{projectId}/images")]
+        [HttpGet("projects/{projectId}/images")]
         [ProducesResponseType(typeof(List<AssignmentResponse>), 200)]
         [ProducesResponseType(typeof(void), 401)]
         public async Task<IActionResult> GetProjectImages(int projectId)
@@ -146,7 +147,7 @@ namespace API.Controllers
         /// <param name="projectId">Project ID.</param>
         /// <param name="dataItemId">Target data item ID.</param>
         /// <returns>Assignment detail.</returns>
-        [HttpGet("project/{projectId}/jump/{dataItemId}")]
+        [HttpGet("projects/{projectId}/data-items/{dataItemId}/jump")]
         [ProducesResponseType(typeof(AssignmentResponse), 200)]
         public async Task<IActionResult> JumpToImage(int projectId, int dataItemId)
         {
@@ -160,7 +161,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -172,7 +173,7 @@ namespace API.Controllers
         /// </remarks>
         /// <param name="id">Assignment ID.</param>
         /// <returns>Assignment detail including image and annotation data.</returns>
-        [HttpGet("assignment/{id}")]
+        [HttpGet("assignments/{id}")]
         [ProducesResponseType(typeof(AssignmentResponse), 200)]
         [ProducesResponseType(typeof(object), 404)]
         public async Task<IActionResult> GetSingleAssignment(int id)
@@ -187,7 +188,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -208,7 +209,7 @@ namespace API.Controllers
         /// <returns>Save result.</returns>
         /// <response code="200">Draft saved successfully.</response>
         /// <response code="400">Invalid input data.</response>
-        [HttpPost("save-draft")]
+        [HttpPost("drafts")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
         public async Task<IActionResult> SaveDraft([FromBody] SubmitAnnotationRequest request)
@@ -223,7 +224,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -240,7 +241,7 @@ namespace API.Controllers
         /// <returns>Submit result.</returns>
         /// <response code="200">Task submitted successfully.</response>
         /// <response code="400">Submission failed.</response>
-        [HttpPost("submit")]
+        [HttpPost("submissions")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
         public async Task<IActionResult> SubmitTask([FromBody] SubmitAnnotationRequest request)
@@ -255,7 +256,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }

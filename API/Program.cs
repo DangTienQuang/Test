@@ -86,9 +86,16 @@ builder.Services.AddSwaggerGen(c =>
         c.IncludeXmlComments(xmlPath);
     }
 
+    var coreXmlFile = "Core.xml";
+    var coreXmlPath = Path.Combine(AppContext.BaseDirectory, coreXmlFile);
+    if (File.Exists(coreXmlPath))
+    {
+        c.IncludeXmlComments(coreXmlPath);
+    }
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Nhập token của bạn vào bên dưới (không cần gõ Bearer)",
+        Description = "Enter your token below (do not include Bearer prefix)",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,

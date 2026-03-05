@@ -12,7 +12,8 @@ namespace API.Controllers
     /// Controller responsible for reviewing annotation tasks
     /// and auditing reviewer quality.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/reviews")]
+    [Tags("5. Review & QA")]
     [ApiController]
     [Authorize]
     public class ReviewController : ControllerBase
@@ -27,7 +28,7 @@ namespace API.Controllers
         // ======================================================
         // REVIEWER – TASK REVIEW
         // ======================================================
-        [HttpGet("projects")]
+        [HttpGet("me/projects")]
         [Authorize(Roles = "Reviewer,Manager,Admin")]
         [ProducesResponseType(typeof(IEnumerable<AssignedProjectResponse>), 200)]
         [ProducesResponseType(typeof(object), 400)]
@@ -43,7 +44,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
         /// <summary>
@@ -60,7 +61,7 @@ namespace API.Controllers
         /// <response code="200">Review submitted successfully.</response>
         /// <response code="400">Review submission failed.</response>
         /// <response code="401">User is not authenticated.</response>
-        [HttpPost("submit")]
+        [HttpPost("submissions")]
         [Authorize(Roles = "Reviewer,Manager,Admin")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
@@ -79,7 +80,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -101,7 +102,7 @@ namespace API.Controllers
         /// <response code="200">Audit recorded successfully.</response>
         /// <response code="400">Audit failed.</response>
         /// <response code="401">User is not authorized.</response>
-        [HttpPost("audit")]
+        [HttpPost("audits")]
         [Authorize(Roles = "Manager,Admin")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
@@ -117,7 +118,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
 
@@ -135,7 +136,7 @@ namespace API.Controllers
         /// <returns>List of assignments awaiting review.</returns>
         /// <response code="200">Tasks retrieved successfully.</response>
         /// <response code="400">Failed to retrieve tasks.</response>
-        [HttpGet("project/{projectId}")]
+        [HttpGet("projects/{projectId}")]
         [Authorize(Roles = "Reviewer,Manager,Admin")]
         [ProducesResponseType(typeof(IEnumerable<TaskResponse>), 200)]
         [ProducesResponseType(typeof(object), 400)]
@@ -151,7 +152,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new Core.DTOs.Responses.ErrorResponse { Message = ex.Message });
             }
         }
     }
