@@ -1,7 +1,24 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\test\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|d:\\test\\bll\\services\\reviewservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|solutionrelative:bll\\services\\reviewservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|d:\\test\\bll\\services\\projectservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|solutionrelative:bll\\services\\projectservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|d:\\test\\bll\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|solutionrelative:bll\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|d:\\test\\bll\\services\\taskservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6AFFB89-A0F9-49D3-9C97-7868A7365ECF}|BLL\\BLL.csproj|solutionrelative:bll\\services\\taskservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,11 +26,63 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ReviewService.cs",
+              "DocumentMoniker": "D:\\test\\BLL\\Services\\ReviewService.cs",
+              "RelativeDocumentMoniker": "BLL\\Services\\ReviewService.cs",
+              "ToolTip": "D:\\test\\BLL\\Services\\ReviewService.cs*",
+              "RelativeToolTip": "BLL\\Services\\ReviewService.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAPsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T07:23:27.716Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProjectService.cs",
+              "DocumentMoniker": "D:\\test\\BLL\\Services\\ProjectService.cs",
+              "RelativeDocumentMoniker": "BLL\\Services\\ProjectService.cs",
+              "ToolTip": "D:\\test\\BLL\\Services\\ProjectService.cs*",
+              "RelativeToolTip": "BLL\\Services\\ProjectService.cs*",
+              "ViewState": "AgIAAHcCAAAAAAAAAADwv5kCAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T07:20:02.795Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UserService.cs",
+              "DocumentMoniker": "D:\\test\\BLL\\Services\\UserService.cs",
+              "RelativeDocumentMoniker": "BLL\\Services\\UserService.cs",
+              "ToolTip": "D:\\test\\BLL\\Services\\UserService.cs*",
+              "RelativeToolTip": "BLL\\Services\\UserService.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T07:18:26.185Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "TaskService.cs",
+              "DocumentMoniker": "D:\\test\\BLL\\Services\\TaskService.cs",
+              "RelativeDocumentMoniker": "BLL\\Services\\TaskService.cs",
+              "ToolTip": "D:\\test\\BLL\\Services\\TaskService.cs*",
+              "RelativeToolTip": "BLL\\Services\\TaskService.cs*",
+              "ViewState": "AgIAAJABAAAAAAAAAAAcwEwBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T07:06:42.351Z",
+              "EditorCaption": ""
             }
           ]
         }
