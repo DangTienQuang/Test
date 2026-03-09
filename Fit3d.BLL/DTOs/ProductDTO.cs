@@ -80,6 +80,8 @@ namespace Fit3d.BLL.DTOs
         [MaxLength(100)]
         public string? Brand { get; set; }
 
+        public IFormFile? ImageFile { get; set; }
+
         [MaxLength(500)]
         public string? ImageUrl { get; set; }
 

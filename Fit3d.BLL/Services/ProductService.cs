@@ -71,6 +71,13 @@ namespace Fit3d.BLL.Services
 
         public async Task<ProductDTO> CreateAsync(CreateProductDTO createDto)
         {
+            string? finalImageUrl = createDto.ImageUrl;
+
+            if (createDto.ImageFile != null && createDto.ImageFile.Length > 0)
+            {
+                finalImageUrl = await _fileService.SaveFileAsync(createDto.ImageFile, "products");
+            }
+
             var entity = new Product
             {
                 Id = Guid.NewGuid(),
@@ -80,7 +87,7 @@ namespace Fit3d.BLL.Services
                 SalePrice = createDto.SalePrice,
                 SKU = createDto.SKU,
                 Brand = createDto.Brand,
-                ImageUrl = createDto.ImageUrl,
+                ImageUrl = finalImageUrl,
                 ModelFilePath = createDto.ModelFilePath,
                 PreviewModelPath = createDto.PreviewModelPath,
 

@@ -3,8 +3,12 @@
   "WorkspaceRootPath": "D:\\test\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BB27A9C6-EE05-4230-A16E-0E4519ACAEB5}|Fit3d.API\\Fit3d.API.csproj|d:\\test\\fit3d.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB27A9C6-EE05-4230-A16E-0E4519ACAEB5}|Fit3d.API\\Fit3d.API.csproj|solutionrelative:fit3d.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B51A4DFD-C019-4494-B813-3F0F27A26E32}|Fit3d.BLL\\Fit3d.BLL.csproj|d:\\test\\fit3d.bll\\services\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B51A4DFD-C019-4494-B813-3F0F27A26E32}|Fit3d.BLL\\Fit3d.BLL.csproj|solutionrelative:fit3d.bll\\services\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B51A4DFD-C019-4494-B813-3F0F27A26E32}|Fit3d.BLL\\Fit3d.BLL.csproj|d:\\test\\fit3d.bll\\dtos\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B51A4DFD-C019-4494-B813-3F0F27A26E32}|Fit3d.BLL\\Fit3d.BLL.csproj|solutionrelative:fit3d.bll\\dtos\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,24 +18,37 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\test\\Fit3d.API\\Program.cs",
-              "RelativeDocumentMoniker": "Fit3d.API\\Program.cs",
-              "ToolTip": "D:\\test\\Fit3d.API\\Program.cs",
-              "RelativeToolTip": "Fit3d.API\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Title": "ProductService.cs",
+              "DocumentMoniker": "D:\\test\\Fit3d.BLL\\Services\\ProductService.cs",
+              "RelativeDocumentMoniker": "Fit3d.BLL\\Services\\ProductService.cs",
+              "ToolTip": "D:\\test\\Fit3d.BLL\\Services\\ProductService.cs*",
+              "RelativeToolTip": "Fit3d.BLL\\Services\\ProductService.cs*",
+              "ViewState": "AgIAADkAAAAAAAAAAAAAAIkAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-09T03:47:36.579Z",
+              "WhenOpened": "2026-03-09T03:53:51.741Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProductDTO.cs",
+              "DocumentMoniker": "D:\\test\\Fit3d.BLL\\DTOs\\ProductDTO.cs",
+              "RelativeDocumentMoniker": "Fit3d.BLL\\DTOs\\ProductDTO.cs",
+              "ToolTip": "D:\\test\\Fit3d.BLL\\DTOs\\ProductDTO.cs*",
+              "RelativeToolTip": "Fit3d.BLL\\DTOs\\ProductDTO.cs*",
+              "ViewState": "AgIAAFAAAAAAAAAAAAAswGYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-09T03:52:51.472Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
             }
           ]
         }
