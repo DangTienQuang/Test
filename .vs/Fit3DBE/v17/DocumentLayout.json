@@ -1,7 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\test\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{BB27A9C6-EE05-4230-A16E-0E4519ACAEB5}|Fit3d.API\\Fit3d.API.csproj|d:\\test\\fit3d.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB27A9C6-EE05-4230-A16E-0E4519ACAEB5}|Fit3d.API\\Fit3d.API.csproj|solutionrelative:fit3d.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,11 +14,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\test\\Fit3d.API\\Program.cs",
+              "RelativeDocumentMoniker": "Fit3d.API\\Program.cs",
+              "ToolTip": "D:\\test\\Fit3d.API\\Program.cs",
+              "RelativeToolTip": "Fit3d.API\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-09T03:47:36.579Z",
+              "EditorCaption": ""
             }
           ]
         }
