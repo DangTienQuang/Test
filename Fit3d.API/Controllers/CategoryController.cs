@@ -40,14 +40,14 @@ namespace Fit3d.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateCategoryDTO createDto)
+        public async Task<IActionResult> Create([FromForm] CreateCategoryDTO createDto)
         {
             var result = await _service.CreateAsync(createDto);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCategoryDTO updateDto)
+        public async Task<IActionResult> Update(Guid id, [FromForm] UpdateCategoryDTO updateDto)
         {
             var result = await _service.UpdateAsync(id, updateDto);
             if (result == null) return NotFound();

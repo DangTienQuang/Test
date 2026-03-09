@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Fit3d.BLL.DTOs
 {
@@ -24,6 +25,8 @@ namespace Fit3d.BLL.DTOs
         [MaxLength(500)]
         public string? Description { get; set; }
 
+        public IFormFile? ImageFile { get; set; }
+
         [MaxLength(500)]
         public string? ImageUrl { get; set; }
 
@@ -40,6 +43,8 @@ namespace Fit3d.BLL.DTOs
 
         [MaxLength(500)]
         public string? Description { get; set; }
+
+        public IFormFile? ImageFile { get; set; }
 
         [MaxLength(500)]
         public string? ImageUrl { get; set; }

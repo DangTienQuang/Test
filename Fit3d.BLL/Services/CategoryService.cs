@@ -14,11 +14,13 @@ namespace Fit3d.BLL.Services
     {
         private readonly IGenericRepository<Category> _repository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFileService _fileService;
 
-        public CategoryService(IGenericRepository<Category> repository, IUnitOfWork unitOfWork)
+        public CategoryService(IGenericRepository<Category> repository, IUnitOfWork unitOfWork, IFileService fileService)
         {
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _fileService = fileService;
         }
 
         public async Task<ICollection<CategoryDTO>> GetAllAsync()
@@ -47,12 +49,19 @@ namespace Fit3d.BLL.Services
 
         public async Task<CategoryDTO> CreateAsync(CreateCategoryDTO createDto)
         {
+            string? finalImageUrl = createDto.ImageUrl;
+
+            if (createDto.ImageFile != null && createDto.ImageFile.Length > 0)
+            {
+                finalImageUrl = await _fileService.SaveFileAsync(createDto.ImageFile, "categories");
+            }
+
             var entity = new Category
             {
                 Id = Guid.NewGuid(),
                 Name = createDto.Name,
                 Description = createDto.Description,
-                ImageUrl = createDto.ImageUrl,
+                ImageUrl = finalImageUrl,
                 DisplayOrder = createDto.DisplayOrder,
                 IsActive = createDto.IsActive,
                 CreatedAt = DateTime.UtcNow
@@ -69,9 +78,21 @@ namespace Fit3d.BLL.Services
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null || entity.IsDeleted) return null;
 
+            string? finalImageUrl = updateDto.ImageUrl;
+
+            if (updateDto.ImageFile != null && updateDto.ImageFile.Length > 0)
+            {
+                finalImageUrl = await _fileService.SaveFileAsync(updateDto.ImageFile, "categories");
+            }
+
             entity.Name = updateDto.Name;
             entity.Description = updateDto.Description;
-            entity.ImageUrl = updateDto.ImageUrl;
+
+            if (finalImageUrl != null)
+            {
+                entity.ImageUrl = finalImageUrl;
+            }
+
             entity.DisplayOrder = updateDto.DisplayOrder;
             entity.IsActive = updateDto.IsActive;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -87,12 +108,9 @@ namespace Fit3d.BLL.Services
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null || entity.IsDeleted) return false;
 
-            // Soft delete
             entity.IsDeleted = true;
             entity.UpdatedAt = DateTime.UtcNow;
             _repository.UpdateAsync(entity);
-
-            // Hard delete option: _repository.DeleteAsync(entity);
 
             await _unitOfWork.SaveChangesAsync();
             return true;
