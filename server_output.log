@@ -1,0 +1,16 @@
+Sample data initialized successfully!
+Readers: 3, Books: 5, Borrow Records: 6
+Library Server is running on 127.0.0.1:3000
+Waiting for client connections...
+Received Reader ID: 101
+Sent 3 records for Reader ID: 101
+Received Reader ID: 103
+Sent 1 records for Reader ID: 103
+Received Reader ID: 999
+Sent 0 records for Reader ID: 999
+Received Reader ID: 101
+Sent 3 records for Reader ID: 101
+Received Reader ID: 103
+Sent 1 records for Reader ID: 103
+Received Reader ID: 999
+Sent 0 records for Reader ID: 999

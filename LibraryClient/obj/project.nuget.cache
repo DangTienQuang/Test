@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ATqrKD/5TTo=",
+  "dgSpecHash": "KWqhP6EbOp4=",
   "success": true,
-  "projectFilePath": "/app/Port3000Server/Port3000Server.csproj",
+  "projectFilePath": "/app/LibraryClient/LibraryClient.csproj",
   "expectedPackageFiles": [
     "/home/jules/.nuget/packages/microsoft.netcore.app.host.linux-x64/8.0.22/microsoft.netcore.app.host.linux-x64.8.0.22.nupkg.sha512"
   ],
