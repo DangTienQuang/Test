@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/app/Port3000Server/Port3000Server.csproj": {}
+    "/app/LibraryClient/LibraryClient.csproj": {}
   },
   "projects": {
-    "/app/Port3000Server/Port3000Server.csproj": {
+    "/app/LibraryClient/LibraryClient.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/app/Port3000Server/Port3000Server.csproj",
-        "projectName": "Port3000Server",
-        "projectPath": "/app/Port3000Server/Port3000Server.csproj",
+        "projectUniqueName": "/app/LibraryClient/LibraryClient.csproj",
+        "projectName": "LibraryClient",
+        "projectPath": "/app/LibraryClient/LibraryClient.csproj",
         "packagesPath": "/home/jules/.nuget/packages/",
-        "outputPath": "/app/Port3000Server/obj/",
+        "outputPath": "/app/LibraryClient/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/jules/.nuget/NuGet/NuGet.Config"
