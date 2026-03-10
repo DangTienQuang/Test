@@ -1,0 +1,14 @@
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\bin\Debug\net8.0\Port3000Server.exe
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\bin\Debug\net8.0\Port3000Server.deps.json
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\bin\Debug\net8.0\Port3000Server.runtimeconfig.json
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\bin\Debug\net8.0\Port3000Server.dll
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\bin\Debug\net8.0\Port3000Server.pdb
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.GeneratedMSBuildEditorConfig.editorconfig
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.AssemblyInfoInputs.cache
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.AssemblyInfo.cs
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.csproj.CoreCompileInputs.cache
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.dll
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\refint\Port3000Server.dll
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.pdb
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\Port3000Server.genruntimeconfig.cache
+Y:\Teaching\PRN_PESolutions\PRN2xx\PRN_PESolution_25SumB5\Port3000Server\obj\Debug\net8.0\ref\Port3000Server.dll
