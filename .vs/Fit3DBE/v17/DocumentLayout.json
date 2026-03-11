@@ -1,24 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\test\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{633C31C4-CBCB-4717-B683-6712CB7E322F}|LibraryClient\\LibraryClient.csproj|d:\\test\\libraryclient\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{633C31C4-CBCB-4717-B683-6712CB7E322F}|LibraryClient\\LibraryClient.csproj|solutionrelative:libraryclient\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\test\\Fit3d.API\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Fit3d.API\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\test\\Fit3d.BLL\\Services\\ProductService.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Fit3d.BLL\\Services\\ProductService.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\test\\Fit3d.BLL\\DTOs\\ProductDTO.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Fit3d.BLL\\DTOs\\ProductDTO.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -26,59 +9,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": -1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\test\\LibraryClient\\Program.cs",
-              "RelativeDocumentMoniker": "LibraryClient\\Program.cs",
-              "ToolTip": "D:\\test\\LibraryClient\\Program.cs",
-              "RelativeToolTip": "LibraryClient\\Program.cs",
-              "ViewState": "AgIAAD0AAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T13:42:15.267Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\test\\Fit3d.API\\Program.cs",
-              "RelativeDocumentMoniker": "Fit3d.API\\Program.cs",
-              "ToolTip": "D:\\test\\Fit3d.API\\Program.cs",
-              "RelativeToolTip": "Fit3d.API\\Program.cs",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-09T04:15:51.122Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ProductService.cs",
-              "DocumentMoniker": "D:\\test\\Fit3d.BLL\\Services\\ProductService.cs",
-              "RelativeDocumentMoniker": "Fit3d.BLL\\Services\\ProductService.cs",
-              "ToolTip": "D:\\test\\Fit3d.BLL\\Services\\ProductService.cs",
-              "RelativeToolTip": "Fit3d.BLL\\Services\\ProductService.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAAAAIkAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-09T03:53:51.741Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ProductDTO.cs",
-              "DocumentMoniker": "D:\\test\\Fit3d.BLL\\DTOs\\ProductDTO.cs",
-              "RelativeDocumentMoniker": "Fit3d.BLL\\DTOs\\ProductDTO.cs",
-              "ToolTip": "D:\\test\\Fit3d.BLL\\DTOs\\ProductDTO.cs",
-              "RelativeToolTip": "Fit3d.BLL\\DTOs\\ProductDTO.cs",
-              "ViewState": "AgIAAFAAAAAAAAAAAAAswGYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-09T03:52:51.472Z"
             }
           ]
         }
