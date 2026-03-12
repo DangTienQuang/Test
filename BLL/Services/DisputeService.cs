@@ -105,8 +105,7 @@ namespace BLL.Services
                     assignment.AnnotatorId,
                     reviewerResults,
                     assignment.ProjectId,
-                    annotatorWasCorrect: true,
-                    project.PricePerLabel);
+                    annotatorWasCorrect: true);
             }
             else
             {
@@ -123,8 +122,7 @@ namespace BLL.Services
                     assignment.AnnotatorId,
                     reviewerResults,
                     assignment.ProjectId,
-                    annotatorWasCorrect: false,
-                    project.PricePerLabel);
+                    annotatorWasCorrect: false);
             }
 
             await _disputeRepo.SaveChangesAsync();
