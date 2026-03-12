@@ -1,0 +1,270 @@
+using BLL.Interfaces;
+using Core.DTOs.Requests;
+using Core.DTOs.Responses;
+using DAL.Interfaces;
+using Core.Constants;
+using Core.Entities;
+using System.Text.Json;
+
+namespace BLL.Services
+{
+    public class ReviewService : IReviewService
+    {
+        private readonly IAssignmentRepository _assignmentRepo;
+        private readonly IRepository<ReviewLog> _reviewLogRepo;
+        private readonly IRepository<DataItem> _dataItemRepo;
+        private readonly IStatisticService _statisticService;
+        private readonly IProjectRepository _projectRepo;
+        private readonly IUserRepository _userRepo;
+        private readonly IActivityLogRepository _activityLogRepo;
+
+        public ReviewService(
+            IAssignmentRepository assignmentRepo,
+            IRepository<ReviewLog> reviewLogRepo,
+            IRepository<DataItem> dataItemRepo,
+            IStatisticService statisticService,
+            IProjectRepository projectRepo,
+            IUserRepository userRepo,
+            IActivityLogRepository activityLogRepo)
+        {
+            _assignmentRepo = assignmentRepo;
+            _reviewLogRepo = reviewLogRepo;
+            _dataItemRepo = dataItemRepo;
+            _statisticService = statisticService;
+            _projectRepo = projectRepo;
+            _userRepo = userRepo;
+            _activityLogRepo = activityLogRepo;
+        }
+
+        public async Task<List<AssignedProjectResponse>> GetReviewerProjectsAsync(string reviewerId)
+        {
+            var allAssignments = await _assignmentRepo.GetAllAsync();
+
+            var reviewerAssignments = allAssignments
+                .Where(a => a.ReviewerId == reviewerId ||
+                            (a.ReviewLogs != null && a.ReviewLogs.Any(r => r.ReviewerId == reviewerId)))
+                .ToList();
+
+            var response = new List<AssignedProjectResponse>();
+            var grouped = reviewerAssignments.GroupBy(a => a.ProjectId);
+
+            foreach (var g in grouped)
+            {
+                var project = await _projectRepo.GetProjectWithDetailsAsync(g.Key);
+
+                response.Add(new AssignedProjectResponse
+                {
+                    ProjectId = g.Key,
+                    ProjectName = project?.Name ?? "Unknown Project",
+                    Description = project?.Description ?? "",
+                    ThumbnailUrl = project?.DataItems?.FirstOrDefault()?.StorageUrl ?? "",
+                    AssignedDate = g.Min(a => a.AssignedDate),
+                    Deadline = project?.Deadline ?? DateTime.MinValue,
+                    TotalImages = g.Count(),
+                    CompletedImages = g.Count(a => a.Status == TaskStatusConstants.Approved || a.Status == TaskStatusConstants.Rejected),
+                    Status = g.All(a => a.Status == TaskStatusConstants.Approved) ? "Completed" : "InProgress"
+                });
+            }
+
+            return response;
+        }
+
+        public async Task ReviewAssignmentAsync(string reviewerId, ReviewRequest request)
+        {
+            var assignment = await _assignmentRepo.GetByIdAsync(request.AssignmentId);
+            if (assignment == null) throw new Exception("Assignment not found");
+            var reviewer = await _userRepo.GetByIdAsync(reviewerId);
+            if (reviewer == null) throw new Exception("User not found");
+
+            if (reviewer.Role != UserRoles.Reviewer &&
+                reviewer.Role != UserRoles.Manager &&
+                reviewer.Role != UserRoles.Admin)
+            {
+                throw new Exception("Permission denied: Only Reviewers or Managers can review tasks.");
+            }
+            if (string.IsNullOrEmpty(assignment.ReviewerId))
+            {
+                assignment.ReviewerId = reviewerId;
+            }
+            else if (assignment.ReviewerId != reviewerId && reviewer.Role == UserRoles.Reviewer)
+            {
+                throw new Exception("This task is explicitly assigned to another reviewer.");
+            }
+
+            if (assignment.Status != TaskStatusConstants.Submitted)
+                throw new Exception("This task is not ready for review.");
+            if (!request.IsApproved && string.IsNullOrWhiteSpace(request.Comment))
+            {
+                throw new Exception("Rejection requires a clear comment explaining the error.");
+            }
+
+            var project = await _projectRepo.GetByIdAsync(assignment.ProjectId);
+            if (project == null) throw new Exception("Project info not found");
+
+            double currentTaskScore = 0;
+            int penaltyScore = 0;
+            bool isCritical = false;
+
+            if (request.IsApproved)
+            {
+                currentTaskScore = 100;
+                assignment.Status = TaskStatusConstants.Approved;
+
+                if (assignment.DataItemId > 0)
+                {
+                    var dataItem = await _dataItemRepo.GetByIdAsync(assignment.DataItemId);
+                    if (dataItem != null)
+                    {
+                        dataItem.Status = TaskStatusConstants.Approved;
+                        _dataItemRepo.Update(dataItem);
+                    }
+                }
+            }
+            else
+            {
+                assignment.Status = TaskStatusConstants.Rejected;
+                int weight = 0;
+
+                if (project.ChecklistItems != null &&
+                    project.ChecklistItems.Any() &&
+                    !string.IsNullOrEmpty(request.ErrorCategory))
+                {
+                    var errorItem = project.ChecklistItems
+                        .FirstOrDefault(c => c.Code == request.ErrorCategory);
+
+                    if (errorItem != null)
+                    {
+                        weight = errorItem.Weight;
+                        if (errorItem.IsCritical) isCritical = true;
+                    }
+                }
+
+                int unit = project.PenaltyUnit > 0 ? project.PenaltyUnit : 10;
+                penaltyScore = weight * unit;
+
+                currentTaskScore = Math.Max(0, 100 - penaltyScore);
+            }
+
+            await _statisticService.TrackReviewResultAsync(
+                assignment.AnnotatorId,
+                reviewerId,
+                assignment.ProjectId,
+                request.IsApproved,
+                currentTaskScore,
+                project.PricePerLabel,
+                isCritical
+            );
+
+            if (request.IsApproved)
+            {
+                var existingReviewLogs = await _reviewLogRepo.GetAllAsync();
+                var hasBeenReviewedBefore = existingReviewLogs
+                    .Any(rl => rl.AssignmentId == assignment.Id);
+
+                if (!hasBeenReviewedBefore)
+                {
+                    await _statisticService.TrackFirstPassCorrectAsync(
+                        assignment.AnnotatorId,
+                        reviewerId,
+                        assignment.ProjectId);
+                }
+            }
+
+            var log = new ReviewLog
+            {
+                AssignmentId = assignment.Id,
+                ReviewerId = reviewerId,
+                Verdict = request.IsApproved ? "Approved" : "Rejected",
+                Comment = request.Comment,
+                ErrorCategory = request.IsApproved ? null : request.ErrorCategory,
+                ScorePenalty = penaltyScore,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _reviewLogRepo.AddAsync(log);
+            _assignmentRepo.Update(assignment);
+
+            var actionStr = request.IsApproved ? "approved" : "rejected";
+            await _activityLogRepo.AddAsync(new ActivityLog
+            {
+                UserId = reviewerId,
+                ActionType = request.IsApproved ? "ApproveTask" : "RejectTask",
+                EntityName = "Project",
+                EntityId = assignment.ProjectId.ToString(),
+                Description = $"Reviewer {actionStr} task {assignment.Id}.",
+                Timestamp = DateTime.UtcNow
+            });
+
+            await _assignmentRepo.SaveChangesAsync();
+            await _activityLogRepo.SaveChangesAsync();
+        }
+
+        public async Task AuditReviewAsync(string managerId, AuditReviewRequest request)
+        {
+            var log = await _reviewLogRepo.GetByIdAsync(request.ReviewLogId);
+            if (log == null) throw new Exception("Review log not found");
+            if (log.IsAudited) throw new Exception("This review has already been audited");
+
+            var assignment = await _assignmentRepo.GetByIdAsync(log.AssignmentId);
+            if (assignment == null) throw new Exception("Related assignment not found");
+
+            await _statisticService.TrackAuditResultAsync(log.ReviewerId, assignment.ProjectId, request.IsCorrectDecision);
+
+            log.IsAudited = true;
+            log.AuditResult = request.IsCorrectDecision ? "Agree" : "Disagree";
+
+            var decisionStr = request.IsCorrectDecision ? "Agreed" : "Disagreed";
+            await _activityLogRepo.AddAsync(new ActivityLog
+            {
+                UserId = managerId,
+                ActionType = "AuditReview",
+                EntityName = "Project",
+                EntityId = assignment.ProjectId.ToString(),
+                Description = $"Manager audited review {log.Id} and {decisionStr.ToLower()} with the decision.",
+                Timestamp = DateTime.UtcNow
+            });
+
+            await _reviewLogRepo.SaveChangesAsync();
+            await _activityLogRepo.SaveChangesAsync();
+        }
+
+        public async Task<List<TaskResponse>> GetTasksForReviewAsync(int projectId, string reviewerId)
+        {
+            var assignments = await _assignmentRepo.GetAssignmentsForReviewerAsync(projectId, reviewerId);
+
+            return assignments.Select(a =>
+            {
+                var latestAnnotation = a.Annotations?.OrderByDescending(an => an.CreatedAt).FirstOrDefault();
+                object? annotationJson = null;
+                if (latestAnnotation != null && !string.IsNullOrEmpty(latestAnnotation.DataJSON))
+                {
+                    try { annotationJson = JsonDocument.Parse(latestAnnotation.DataJSON).RootElement; } catch { }
+                }
+
+                return new TaskResponse
+                {
+                    AssignmentId = a.Id,
+                    DataItemId = a.DataItemId,
+                    StorageUrl = a.DataItem?.StorageUrl ?? "",
+                    ProjectName = a.Project?.Name ?? "",
+                    Status = a.Status ?? "",
+                    Deadline = a.Project?.Deadline ?? DateTime.MinValue,
+                    ReviewerId = a.ReviewerId ?? "",
+                    ReviewerName = a.Reviewer?.FullName ?? "",
+
+                    Labels = a.Project?.LabelClasses.Select(l => new LabelResponse
+                    {
+                        Id = l.Id,
+                        Name = l.Name ?? "",
+                        Color = l.Color ?? "",
+                        GuideLine = l.GuideLine ?? "",
+                        Checklist = !string.IsNullOrEmpty(l.DefaultChecklist)
+                                    ? JsonSerializer.Deserialize<List<string>>(l.DefaultChecklist, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<string>()
+                                    : new List<string>()
+                    }).ToList() ?? new List<LabelResponse>(),
+                    ExistingAnnotations = annotationJson != null ? new List<object> { annotationJson } : new List<object>()
+                };
+            }).ToList();
+        }
+    }
+}
