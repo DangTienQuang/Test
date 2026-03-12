@@ -151,7 +151,6 @@ namespace BLL.Services
                 assignment.ProjectId,
                 request.IsApproved,
                 currentTaskScore,
-                project.PricePerLabel,
                 isCritical
             );
 
