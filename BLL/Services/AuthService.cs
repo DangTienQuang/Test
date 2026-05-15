@@ -29,7 +29,6 @@ namespace AutoWashPro.BLL.Services
             _context = context;
             _configuration = configuration;
         }
-
         public async Task<AuthResponseDTO> RegisterAsync(RegisterDTO request)
         {
             var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
@@ -38,8 +37,8 @@ namespace AutoWashPro.BLL.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-
                 var defaultTier = await _context.Tiers.FirstOrDefaultAsync(t => t.MinAccumulatedPoints == 0);
+
                 if (defaultTier == null)
                 {
                     defaultTier = new Tier
@@ -75,7 +74,8 @@ namespace AutoWashPro.BLL.Services
                 var wallet = new Wallet
                 {
                     UserId = user.UserId,
-                    MainBalance = 0,
+                    Balance = 0,
+                    Status = "Active"
                 };
                 _context.Wallets.Add(wallet);
 

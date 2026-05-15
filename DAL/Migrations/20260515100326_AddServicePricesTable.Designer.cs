@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(AutoWashDbContext))]
-    [Migration("20260515070258_Ten_Su_Thay_Doi")]
-    partial class Ten_Su_Thay_Doi
+    [Migration("20260515100326_AddServicePricesTable")]
+    partial class AddServicePricesTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -131,11 +131,11 @@ namespace DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<decimal>("BasePrice")
-                        .HasColumnType("decimal(65,30)");
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
 
-                    b.Property<int>("DurationMinutes")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("ServiceName")
                         .IsRequired()
@@ -147,6 +147,33 @@ namespace DAL.Migrations
                     b.ToTable("Services");
                 });
 
+            modelBuilder.Entity("AutoWashPro.DAL.Entities.ServicePrice", b =>
+                {
+                    b.Property<int>("ServicePriceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VehicleTypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ServicePriceId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("VehicleTypeId");
+
+                    b.ToTable("ServicePrices");
+                });
+
             modelBuilder.Entity("AutoWashPro.DAL.Entities.Tier", b =>
                 {
                     b.Property<int>("TierId")
@@ -154,6 +181,9 @@ namespace DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("BookingWindowDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinAccumulatedPoints")
                         .HasColumnType("int");
 
                     b.Property<double>("PointMultiplier")
@@ -276,16 +306,35 @@ namespace DAL.Migrations
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("VehicleType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                    b.Property<int>("VehicleTypeId")
+                        .HasColumnType("int");
 
                     b.HasKey("LicensePlate");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("VehicleTypeId");
+
                     b.ToTable("Vehicles");
+                });
+
+            modelBuilder.Entity("AutoWashPro.DAL.Entities.VehicleType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("VehicleTypes");
                 });
 
             modelBuilder.Entity("AutoWashPro.DAL.Entities.Voucher", b =>
@@ -344,7 +393,7 @@ namespace DAL.Migrations
                         .IsRequired();
 
                     b.HasOne("AutoWashPro.DAL.Entities.Service", "Service")
-                        .WithMany()
+                        .WithMany("Bookings")
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -365,7 +414,7 @@ namespace DAL.Migrations
             modelBuilder.Entity("AutoWashPro.DAL.Entities.CustomerProfile", b =>
                 {
                     b.HasOne("AutoWashPro.DAL.Entities.Tier", "Tier")
-                        .WithMany("Customers")
+                        .WithMany("CustomerProfiles")
                         .HasForeignKey("TierId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -390,6 +439,25 @@ namespace DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("AutoWashPro.DAL.Entities.ServicePrice", b =>
+                {
+                    b.HasOne("AutoWashPro.DAL.Entities.Service", "Service")
+                        .WithMany("ServicePrices")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AutoWashPro.DAL.Entities.VehicleType", "VehicleType")
+                        .WithMany()
+                        .HasForeignKey("VehicleTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Service");
+
+                    b.Navigation("VehicleType");
                 });
 
             modelBuilder.Entity("AutoWashPro.DAL.Entities.Transaction", b =>
@@ -434,7 +502,15 @@ namespace DAL.Migrations
                         .WithMany("Vehicles")
                         .HasForeignKey("UserId");
 
+                    b.HasOne("AutoWashPro.DAL.Entities.VehicleType", "VehicleType")
+                        .WithMany("Vehicles")
+                        .HasForeignKey("VehicleTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("User");
+
+                    b.Navigation("VehicleType");
                 });
 
             modelBuilder.Entity("AutoWashPro.DAL.Entities.Wallet", b =>
@@ -448,9 +524,16 @@ namespace DAL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AutoWashPro.DAL.Entities.Service", b =>
+                {
+                    b.Navigation("Bookings");
+
+                    b.Navigation("ServicePrices");
+                });
+
             modelBuilder.Entity("AutoWashPro.DAL.Entities.Tier", b =>
                 {
-                    b.Navigation("Customers");
+                    b.Navigation("CustomerProfiles");
                 });
 
             modelBuilder.Entity("AutoWashPro.DAL.Entities.User", b =>
@@ -458,6 +541,11 @@ namespace DAL.Migrations
                     b.Navigation("CustomerProfile")
                         .IsRequired();
 
+                    b.Navigation("Vehicles");
+                });
+
+            modelBuilder.Entity("AutoWashPro.DAL.Entities.VehicleType", b =>
+                {
                     b.Navigation("Vehicles");
                 });
 #pragma warning restore 612, 618
